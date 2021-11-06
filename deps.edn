@@ -1,0 +1,13 @@
+{:deps {org.clojure/clojure {:mvn/version "1.10.3"}}
+ 
+ :aliases  {:build {:extra-paths ["src" "resources"]
+                    :deps {io.github.clojure/tools.build {:git/tag "v0.2.1" :git/sha "dd64636"}}
+                    :ns-default build}
+            
+            :dev {:extra-paths ["resources"
+                                "src"]
+                  
+                  :extra-deps {http-kit/http-kit {:mvn/version "2.5.0"}
+                               com.brunobonacci/mulog  {:mvn/version "0.6.0"}
+                               com.brunobonacci/mulog-elasticsearch {:mvn/version "0.6.0"}}}}}
+
