@@ -6,8 +6,11 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
-(defn mpd-ref-ini []
+(defn ref-ini []
   (->  (io/resource "mpd-ref.edn")
        slurp
        edn/read-string
        mem/up))
+
+(defn start [mp-id]
+  (scheduler/up mp-id (mem/cont-states mp-id) (mem/cont-ctrls mp-id))) 

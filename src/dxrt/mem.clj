@@ -1,12 +1,14 @@
 (ns dxrt.mem)
 
-(defonce mem (atom {}))
+(def mem (atom {}))
 
+(comment
+  (alter-var-root #'mem {}))
 ;; ....................................................................................................
 ;; all in, all out
 ;; ....................................................................................................
-(defn up [{mp-id :_id mpd :Mp}] (swap! mem assoc (keyword mp-id) mpd))
-(defn down [mp-id] (swap! mem dissoc mp-id))
+(defn up [{mp-id :_id mpd :Mp}]  (swap! mem assoc (keyword mp-id) mpd))
+(defn down [mp-id]  (dissoc mem mp-id))
 
 ;; ....................................................................................................
 ;; container (cont)

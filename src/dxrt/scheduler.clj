@@ -1,16 +1,31 @@
 (ns dxrt.scheduler
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dxrt scheduler. "}
-  (:require [dxrt.mem :as mem]))
+  (:require [clojure.string :as string]))
 
-(defonce ctrls (atom {}))
-(defonce states (atom {}))
+
+
+(def mem (atom {}))
 
 ;; ....................................................................................................
 ;; all in, all out
 ;; ....................................................................................................
-(defn template [a mp-id idx value] (swap! a assoc-in [mp-id idx] (agent value)))
 
-(defn up [mp-id]
-  (mapv #(template states mp-id %1 %2) (range) (mem/cont-states mp-id))
-  (mapv #(template ctrls  mp-id %1 %2) (range) (mem/cont-ctrls mp-id)))
+(defn dispatch  [ctx k r old-value new-value]
+  (prn ".....")
+  (prn ctx)
+  (prn old-value)
+  (prn new-value))
+               
+
+(defn up [mp-id states ctrls]
+  (mapv
+   (fn [idx state ctrl]
+     (let [a (agent {:state state :ctrl ctrl})]
+       (add-watch a :worker  dispatch)
+       (swap! mem assoc-in [mp-id idx] a)))
+   (range) states ctrls))
+
+(comment
+  ;in cli ns
+  (get-in scheduler/mem [:mpd-ref 0]))
