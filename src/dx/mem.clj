@@ -1,4 +1,4 @@
-(ns dxrt.mem)
+(ns dx.mem)
 
 (def mem (atom {}))
 
@@ -32,14 +32,15 @@
 ;; ....................................................................................................
 ;; states
 ;; ....................................................................................................
-(defn template [v f] (mapv (fn [vv] (mapv (fn [vvv] (mapv f vvv)) vv)) v))
+(defn states [v f] (mapv (fn [vv] (mapv (fn [vvv] (mapv f vvv)) vv)) v))
 
-(defn cont-states [mp-id] (template (cont-defs mp-id) (constantly :ini)))
-(defn defi-states [mp-id] (template (defi-defs mp-id) (constantly :ini)))
+(defn cont-states [mp-id] (states (cont-defs mp-id) (constantly :ini)))
+(defn defi-states [mp-id] (states (defi-defs mp-id) (constantly :ini)))
 
 ;; ....................................................................................................
 ;; ctrls
 ;; ....................................................................................................
+(defn ctrls [v f] (mapv f v))
 (defn cont-ctrls [mp-id] (ctrls (cont-defs mp-id) (constantly :ini)))
 (defn defi-ctrls [mp-id] (ctrls (defi-defs mp-id) (constantly :ini)))
 

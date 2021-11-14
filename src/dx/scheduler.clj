@@ -1,4 +1,4 @@
-(ns dxrt.scheduler
+(ns dx.scheduler
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dxrt scheduler. "}
   (:require [clojure.string :as string]))
@@ -11,21 +11,24 @@
 ;; all in, all out
 ;; ....................................................................................................
 
-(defn dispatch  [ctx k r old-value new-value]
+(defn dispatch  [k r old-value new-value]
   (prn ".....")
-  (prn ctx)
   (prn old-value)
   (prn new-value))
                
 
-(defn up [mp-id states ctrls]
+(defn up [mp-id struct states ctrls]
   (mapv
    (fn [idx state ctrl]
      (let [a (agent {:state state :ctrl ctrl})]
        (add-watch a :worker  dispatch)
-       (swap! mem assoc-in [mp-id idx] a)))
+       (swap! mem assoc-in [mp-id struct idx] a)))
    (range) states ctrls))
+
+(defn cont-agent [mp-id no-idx] (get-in @mem [mp-id :cont no-idx]))
 
 (comment
   ;in cli ns
-  (get-in scheduler/mem [:mpd-ref 0]))
+  (get-in scheduler/mem [:mpd-ref 0])
+  (send (cont-agent :mpd-ref 0) (fn [m] (assoc-in m [:state 0 0] :working)))
+  (.getWatches(cont-agent :mpd-ref 0)))

@@ -1,8 +1,8 @@
-(ns dxrt.cli
+(ns dx.cli
     ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
       :doc "The dxrt command line interface. "}
-  (:require [dxrt.mem :as mem]
-            [dxrt.scheduler :as scheduler]
+  (:require [dx.mem :as mem]
+            [dx.scheduler :as scheduler]
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
@@ -13,4 +13,4 @@
        mem/up))
 
 (defn start [mp-id]
-  (scheduler/up mp-id (mem/cont-states mp-id) (mem/cont-ctrls mp-id))) 
+  (scheduler/up mp-id :cont (mem/cont-states mp-id) (mem/cont-ctrls mp-id))) 
