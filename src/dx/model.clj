@@ -1,14 +1,14 @@
-(ns dx.mem)
+(ns dx.model)
 
-(def mem (atom {}))
+(defonce mem (atom {}))
 
 (comment
   (alter-var-root #'mem {}))
 ;; ....................................................................................................
 ;; all in, all out
 ;; ....................................................................................................
-(defn up [{mp-id :_id mpd :Mp}]  (swap! mem assoc (keyword mp-id) mpd))
-(defn down [mp-id]  (dissoc mem mp-id))
+(defn up [mp-id  mpd]  (swap! mem assoc (keyword mp-id) mpd))
+(defn down [mp-id]  (swap! mem dissoc mp-id))
 
 ;; ....................................................................................................
 ;; container (cont)
@@ -32,15 +32,14 @@
 ;; ....................................................................................................
 ;; states
 ;; ....................................................................................................
-(defn states [v f] (mapv (fn [vv] (mapv (fn [vvv] (mapv f vvv)) vv)) v))
-
-(defn cont-states [mp-id] (states (cont-defs mp-id) (constantly :ini)))
-(defn defi-states [mp-id] (states (defi-defs mp-id) (constantly :ini)))
+(defn states [v] (mapv (fn [vv] (mapv (fn [vvv] (mapv (constantly :ready) vvv)) vv)) v))
+(defn cont-states [mp-id] (states (cont-defs mp-id)))
+(defn defi-states [mp-id] (states (defi-defs mp-id)))
 
 ;; ....................................................................................................
 ;; ctrls
 ;; ....................................................................................................
-(defn ctrls [v f] (mapv f v))
-(defn cont-ctrls [mp-id] (ctrls (cont-defs mp-id) (constantly :ini)))
-(defn defi-ctrls [mp-id] (ctrls (defi-defs mp-id) (constantly :ini)))
+(defn ctrls [v] (mapv (constantly :ready) v))
+(defn cont-ctrls [mp-id] (ctrls (cont-defs mp-id)))
+(defn defi-ctrls [mp-id] (ctrls (defi-defs mp-id)))
 

@@ -1,11 +1,10 @@
 (ns dx.scheduler
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
-    :doc "The dxrt scheduler. "}
+    :doc "The dx scheduler. "}
   (:require [clojure.string :as string]))
 
 
-
-(def mem (atom {}))
+(defonce mem (atom {}))
 
 ;; ....................................................................................................
 ;; all in, all out
@@ -15,7 +14,6 @@
   (prn ".....")
   (prn old-value)
   (prn new-value))
-               
 
 (defn up [mp-id struct states ctrls]
   (mapv
@@ -25,10 +23,12 @@
        (swap! mem assoc-in [mp-id struct idx] a)))
    (range) states ctrls))
 
+(defn down [mp-id struct] (swap! mem update-in [mp-id] dissoc struct))
+
 (defn cont-agent [mp-id no-idx] (get-in @mem [mp-id :cont no-idx]))
 
 (comment
-  ;in cli ns
-  (get-in scheduler/mem [:mpd-ref 0])
+
+  (get-in @mem [:mpd-ref 0])
   (send (cont-agent :mpd-ref 0) (fn [m] (assoc-in m [:state 0 0] :working)))
-  (.getWatches(cont-agent :mpd-ref 0)))
+  (.getWatches (cont-agent :mpd-ref 0)))
