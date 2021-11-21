@@ -16,6 +16,7 @@
   (prn new-value))
 
 (defn up [mp-id struct states ctrls]
+  (prn states)
   (mapv
    (fn [idx state ctrl]
      (let [a (agent {:state state :ctrl ctrl})]
