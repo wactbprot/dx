@@ -17,7 +17,7 @@
     (model/up mp-id mp)
     (scheduler/up mp-id :cont (model/cont-states mp-id) (model/cont-ctrls mp-id))
     (scheduler/up mp-id :defi (model/defi-states mp-id) (model/defi-ctrls mp-id))
-    (exch/up mp-id (model/exch))))
+    (exch/up mp-id (model/exch mp-id))))
 
 (defn down [mp-id]
   (scheduler/down mp-id :cont)
