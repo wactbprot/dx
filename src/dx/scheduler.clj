@@ -46,48 +46,58 @@
 
 (defn ready? [{state :state}] (= state :ready))
 
+(defn check-launch [{states :states :as m}]
+  ;; next up
+  )
+
 (defn check-error [{states :states :as m}]
   (if (not-empty (filterv error? states))
   (assoc m :ctrl :error)
   m))
 
-(defn check-launch [{states :states :as m}]
-  )
 
-(defn state-fn [idx jdx kw]
-  "Returns a function which is used in the agents send function." 
+(defn state-fn 
+  "Returns a function which should be used in the agents send-function." 
+  [idx jdx kw]
   (fn [{states :states ctrl :ctrl launch :launch :as m}]
     (let [f (update-state-fn idx jdx kw)]
       (-> (assoc m :states (mapv f states))
           (check-error))
-      
-
-
-    ;; check state for error
-    ;; update :ctrl if :error
     ;; check state for next worker start
     ;; ...
     ;;
-    ;; update :ctrl
     ;; update :launch (worker)
     ;; 
       )))
 
-(defn set-state [mp-id struct ndx idx jdx kw]
-  "The `set-state` function should be used by the worker to ste new
+(defn set-state 
+  "The `set-state` function should be used by the worker to set new
   states. This triggers the re-evaluation of the state map and starts
-  next worker etc."
+  next worker etc.
+  
+  Example:
+  ```clojure
+  (set-state :mpd-ref :cont 0 0 0 :working)
+  ```"
+  [mp-id struct ndx idx jdx kw]
   (let [a (state-agent mp-id struct ndx)
         f (state-fn idx jdx kw)]
     (send a f)
     (await a)
     ;; check launch and launch
     ))
-  
+
+(defn set-state-error [mp-id struct ndx idx jdx] (set-state mp-id struct ndx idx jdx :error))
+
+(defn set-state-working [mp-id struct ndx idx jdx] (set-state mp-id struct ndx idx jdx :working))
+
+(defn set-state-exec [mp-id struct ndx idx jdx] (set-state mp-id struct ndx idx jdx :executed))
+
+(defn set-state-ready [mp-id struct ndx idx jdx] (set-state mp-id struct ndx idx jdx :ready))
 
 (comment
 
-  (get-in @mem [:mpd-ref 0])
+  (get-in @mem [:mpd-ref :cont 0])
   (send (cont-agent :mpd-ref 0) (fn [m] (assoc-in m [:state 0 0] :working)))
   (.getWatches (cont-agent :mpd-ref 0)))
 
