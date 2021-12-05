@@ -25,9 +25,9 @@
 (defn up [mp-id struct states ctrls]
   (mapv
    (fn [ndx state ctrl]
-     (let [a (agent {:state  (s-vec state)
+     (let [a (agent {:states  (s-vec state)
                      :ctrl   ctrl
-                     :launch [nil nil]})]
+                     :launch {:idx 0 :jdx 0}})]
        (swap! mem assoc-in [mp-id struct ndx] a)))
    (range) states ctrls))
 
@@ -46,14 +46,23 @@
 
 (defn ready? [{state :state}] (= state :ready))
 
+(defn check-error [{states :states :as m}]
+  (if (not-empty (filterv error? states))
+  (assoc m :ctrl :error)
+  m))
+
+(defn check-launch [{states :states :as m}]
+  )
+
 (defn state-fn [idx jdx kw]
   "Returns a function which is used in the agents send function." 
-  (fn [{state :state ctrl :ctrl launch :launch :as m}]
-    (let [f (update-state-fn idx jdx kw)
-          m  (assoc m :state (mapv f state))
-          err (filterv error? state) ]
-
+  (fn [{states :states ctrl :ctrl launch :launch :as m}]
+    (let [f (update-state-fn idx jdx kw)]
+      (-> (assoc m :states (mapv f states))
+          (check-error))
       
+
+
     ;; check state for error
     ;; update :ctrl if :error
     ;; check state for next worker start
@@ -62,7 +71,7 @@
     ;; update :ctrl
     ;; update :launch (worker)
     ;; 
-    m)))
+      )))
 
 (defn set-state [mp-id struct ndx idx jdx kw]
   "The `set-state` function should be used by the worker to ste new
