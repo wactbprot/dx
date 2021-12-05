@@ -25,20 +25,35 @@
 (defn up [mp-id struct states ctrls]
   (mapv
    (fn [ndx state ctrl]
-     (let [a (agent {:state state
-                     :ctrl ctrl
+     (let [a (agent {:state  (s-vec state)
+                     :ctrl   ctrl
                      :launch [nil nil]})]
        (swap! mem assoc-in [mp-id struct ndx] a)))
    (range) states ctrls))
 
-(defn down [mp-id struct] (swap! mem update-in [mp-id] dissoc struct))
+(defn down [mp-id struct]
+  (swap! mem update-in [mp-id] dissoc struct))
 
 (defn state-agent [mp-id struct ndx] (get-in @mem [mp-id struct ndx]))
 
+(defn update-state-fn [idx jdx kw]
+  (fn [{i :idx j :jdx :as m}]
+    (if (and (= idx i) (= jdx j))
+      (assoc m :state kw)
+      m)))
+
+(defn error? [{state :state}] (= state :error))
+
+(defn ready? [{state :state}] (= state :ready))
+
 (defn state-fn [idx jdx kw]
-  (fn [m]
-    (assoc-in m [:state idx jdx] kw)
-    
+  "Returns a function which is used in the agents send function." 
+  (fn [{state :state ctrl :ctrl launch :launch :as m}]
+    (let [f (update-state-fn idx jdx kw)
+          m  (assoc m :state (mapv f state))
+          err (filterv error? state) ]
+
+      
     ;; check state for error
     ;; update :ctrl if :error
     ;; check state for next worker start
@@ -47,9 +62,12 @@
     ;; update :ctrl
     ;; update :launch (worker)
     ;; 
-    ))
+    m)))
 
 (defn set-state [mp-id struct ndx idx jdx kw]
+  "The `set-state` function should be used by the worker to ste new
+  states. This triggers the re-evaluation of the state map and starts
+  next worker etc."
   (let [a (state-agent mp-id struct ndx)
         f (state-fn idx jdx kw)]
     (send a f)
