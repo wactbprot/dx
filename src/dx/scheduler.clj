@@ -25,9 +25,8 @@
 (defn up [mp-id struct states ctrls]
   (mapv
    (fn [ndx state ctrl]
-     (let [a (agent {:states  (s-vec state)
-                     :ctrl   ctrl
-                     :launch {:idx 0 :jdx 0}})]
+     (let [a (agent {:states (s-vec state)
+                     :ctrl   ctrl})]
        (swap! mem assoc-in [mp-id struct ndx] a)))
    (range) states ctrls))
 
@@ -42,18 +41,23 @@
       (assoc m :state kw)
       m)))
 
-(defn error? [{state :state}] (= state :error))
-
-(defn ready? [{state :state}] (= state :ready))
-
+(defn all-pre-exec? [{idx :idx} v]
+  (empty? (filterv (fn [{i :idx s :state}]
+             (and (< i idx) (not= s :executed)))
+           v)))
+                   
 (defn check-launch [{states :states :as m}]
-  ;; next up
-  )
+  (if-let [next-ready (first (filterv #(= % :ready) states))]
+    (if (or (zero? (:idx next-ready))
+            (all-pre-exec? next-ready states)) 
+      (assoc m :launch next-ready)
+      m)
+    m))
 
 (defn check-error [{states :states :as m}]
-  (if (not-empty (filterv error? states))
-  (assoc m :ctrl :error)
-  m))
+  (if (not-empty (filterv #(= % :error) states))
+    (assoc m :ctrl :error)
+    m))
 
 
 (defn state-fn 
@@ -62,13 +66,8 @@
   (fn [{states :states ctrl :ctrl launch :launch :as m}]
     (let [f (update-state-fn idx jdx kw)]
       (-> (assoc m :states (mapv f states))
-          (check-error))
-    ;; check state for next worker start
-    ;; ...
-    ;;
-    ;; update :launch (worker)
-    ;; 
-      )))
+          check-error
+          check-launch))))
 
 (defn set-state 
   "The `set-state` function should be used by the worker to set new
