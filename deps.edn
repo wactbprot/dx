@@ -3,6 +3,12 @@
  :aliases  {:build {:extra-paths ["src" "resources"]
                     :deps {io.github.clojure/tools.build {:git/tag "v0.2.1" :git/sha "dd64636"}}
                     :ns-default build}
+
+            :test {:extra-paths ["test"]
+                   :extra-deps {io.github.cognitect-labs/test-runner 
+                                {:git/tag "v0.5.0" :git/sha "b3fd0d2"}}
+                   :main-opts ["-m" "cognitect.test-runner"]
+                   :exec-fn cognitect.test-runner.api/test}
             
             :dev {:extra-paths ["resources"
                                 "src"]
@@ -10,4 +16,3 @@
                   :extra-deps {http-kit/http-kit {:mvn/version "2.5.0"}
                                com.brunobonacci/mulog  {:mvn/version "0.6.0"}
                                com.brunobonacci/mulog-elasticsearch {:mvn/version "0.6.0"}}}}}
-

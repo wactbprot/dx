@@ -47,23 +47,24 @@
            v)))
                    
 (defn check-launch [{states :states :as m}]
-  (if-let [next-ready (first (filterv #(= % :ready) states))]
+  (if-let [next-ready (first (filterv (fn [{s :state}](= s :ready)) states))]
     (if (or (zero? (:idx next-ready))
             (all-pre-exec? next-ready states)) 
       (assoc m :launch next-ready)
-      m)
+      (dissoc m :launch))
     m))
 
-(defn check-error [{states :states :as m}]
-  (if (not-empty (filterv #(= % :error) states))
+(defn check-error
+  "Checks for error states. Sets `:ctrl` interface to `:error` if any."
+  [{states :states :as m}]
+  (if (not-empty (filterv (fn [{s :state}](= s :error)) states))
     (assoc m :ctrl :error)
     m))
-
 
 (defn state-fn 
   "Returns a function which should be used in the agents send-function." 
   [idx jdx kw]
-  (fn [{states :states ctrl :ctrl launch :launch :as m}]
+  (fn [{states :states :as m}]
     (let [f (update-state-fn idx jdx kw)]
       (-> (assoc m :states (mapv f states))
           check-error
@@ -94,6 +95,23 @@
 
 (defn set-state-ready [mp-id struct ndx idx jdx] (set-state mp-id struct ndx idx jdx :ready))
 
+(defn ctrl-fn 
+  "Returns a function which should be used in the agents send-function." 
+  [kw]
+  (fn [m]
+    (-> (assoc m :ctrl kw)
+        check-error
+        check-launch)))
+
+(defn set-ctrl
+  [mp-id struct ndx kw]
+  (let [a (state-agent mp-id struct ndx)
+        f (ctrl-fn  kw)]
+    (send a f)
+    (await a)
+    ;; check launch and launch
+    (prn a)
+    ))
 (comment
 
   (get-in @mem [:mpd-ref :cont 0])
