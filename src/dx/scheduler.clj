@@ -11,54 +11,69 @@
 ;; ....................................................................................................
 (defn flattenv [coll] (into [] (flatten coll))) 
 
-(defn s-vec 
+(defn state-vec 
   "Turns the state vector `s` (a vector of vectors with keywords in
-  it) into a vector of maps which can be analysed more easy."
-  [s]
+  it) into a vector of maps which can be analysed more easy.
+
+  Example:
+  ```clojure
+  (s-vec [[:foo] [:bar :baz]])
+
+  ;; =>
+  ;; [{:idx 0, :jdx 0, :state :foo}
+  ;; {:idx 1, :jdx 0, :state :bar}
+  ;; {:idx 1, :jdx 1, :state :baz}]
+  ```"
+  [vv]
   (flattenv (mapv (fn [v i]
-                    (mapv (fn [w j] {:idx i :jdx j :state w })
+                    (mapv (fn [s j] {:idx i :jdx j :state s})
                           v (range)))
-                  s (range))))
+                  vv (range))))
 
-(defn up [mp-id struct states ctrls]
-  "Builds up the state and ctrl interface."
-  (mapv
-   (fn [ndx state ctrl]
-     (let [a (agent {:states (s-vec state)
-                     :ctrl   ctrl})]
-       (swap! mem assoc-in [mp-id struct ndx] a)))
-   (range) states ctrls))
+(defn up 
+  "Builds up the state and ctrl interface. For the mutating parts agents are used."
+  [mp-id struct states ctrls]
+  (mapv (fn [ndx state ctrl]
+          (swap! mem assoc-in [mp-id struct ndx] (agent {:states (state-vec state)
+                                                         :ctrl   ctrl})))
+        (range) states ctrls))
 
-(defn down [mp-id struct]
+(defn down 
   "Takes down the state and ctrl interface."
+  [mp-id struct]
   (swap! mem update-in [mp-id] dissoc struct))
 
-(defn state-agent [mp-id struct ndx] (get-in @mem [mp-id struct ndx]))
+(defn interface-agent [mp-id struct ndx] (get-in @mem [mp-id struct ndx]))
 
+;; ....................................................................................................
+;; runtime tests
+;; ....................................................................................................
 (defn ctrl-go? [{ctrl :ctrl}]
   (and (some (partial = ctrl) [:run :mon :cycle])
        (not= ctrl :error)))
 
 (defn launch? [{{i :idx j :jdx} :launch}] (and (int? i) (int j)))
 
-(defn dispatch
-  ([m] (dispatch m prn))
-  ([m f] (when (and (ctrl-go? m) (launch? m)) (f (:launch m)))))
-
-(defn update-state-fn [idx jdx kw]
-  (fn [{i :idx j :jdx :as m}]
-    (if (and (= idx i) (= jdx j))
-      (assoc m :state kw)
-      m)))
-
 (defn all-pre-exec? [{idx :idx} v]
   (or (zero? idx)
       (empty? (filterv
                (fn [{i :idx s :state}] (and (< i idx) (not= s :executed)))
                v))))
-                   
-(defn ->launch [{states :states :as m}]
-  (if-let [next-ready (first (filterv (fn [{s :state}](= s :ready)) states))]
+
+;; ....................................................................................................
+;; dispatch
+;; ....................................................................................................
+(defn dispatch
+  ([m] (dispatch m prn))
+  ([m f] (when (and (ctrl-go? m) (launch? m)) (f (:launch m)))))
+
+;; ....................................................................................................
+;; interfacs update funs
+;; ....................................................................................................
+(defn ->launch
+  "Checks for positions to launch next and updates the interface."
+  [{states :states :as m}]
+  (if-let [next-ready (first (filterv (fn [{s :state}] (= s :ready)) states))]
     (if (all-pre-exec? next-ready states) 
       (assoc m :launch next-ready)
       (dissoc m :launch))
@@ -71,8 +86,17 @@
     (assoc m :ctrl :error)
     m))
 
+;; ....................................................................................................
+;; state
+;; ....................................................................................................
+(defn update-state-fn [idx jdx kw]
+  (fn [{i :idx j :jdx :as m}]
+    (if (and (= idx i) (= jdx j))
+      (assoc m :state kw)
+      m)))
+
 (defn state-fn 
-  "Returns a function which should be used in the agents send-function." 
+  "Returns a function which should be used as the agents send-function." 
   [idx jdx kw]
   (fn [{states :states :as m}]
     (let [f (update-state-fn idx jdx kw)]
@@ -82,21 +106,26 @@
 
 (defn set-state 
   "The `set-state` function should be used by the worker to set new
-  states. This triggers the re-evaluation of the state map and starts
-  next worker etc.
+  states.  This re-evaluats the interface by means
+  of [[set-state]]. Afterwards, the function waits for concurrent
+  modifications of other threads by `(await a)` followed by the call
+  to the dispatch function.
   
   Example:
   ```clojure
   (set-state :mpd-ref :cont 0 0 0 :working)
   ```"
   [mp-id struct ndx idx jdx kw]
-  (let [a (state-agent mp-id struct ndx)]
+  (let [a (interface-agent mp-id struct ndx)]
     (send a (state-fn idx jdx kw))
     (await a)
     (dispatch (deref a))))
 
+;; ....................................................................................................
+;; ctrl
+;; ....................................................................................................
 (defn ctrl-fn 
-  "Returns a function which should be used in the agents send-function." 
+  "Returns a function which should be used as the agents send-function." 
   [kw]
   (fn [m]
     (-> (assoc m :ctrl kw)
@@ -105,15 +134,17 @@
 
 (defn set-ctrl
   "The `set-ctrl` function should be used by the user to trigger actions.
-  This re-evaluats the state map and starts or stops the execution
+  This re-evaluats the interface by means of [[set-ctrl]]. Afterwards,
+  the function waits for concurrent modifications of other threads
+  by `(await a)` followed by the call to the dispatch function.
   
   Example:
   ```clojure
   (set-ctrl :mpd-ref :cont 0 :run)
   ```"
   [mp-id struct ndx kw]
-  (let [a (state-agent mp-id struct ndx)]
-    (send a (ctrl-fn  kw))
+  (let [a (interface-agent mp-id struct ndx)]
+    (send a (ctrl-fn kw))
     (await a)
     (dispatch (deref a))))
 

@@ -25,7 +25,9 @@
   (exch/down mp-id)
   (model/down mp-id))
 
-(defn run [mp-id ndx] (scheduler/set-ctrl-run mp-id :cont ndx))
+(defn run [mp-id ndx] (scheduler/set-ctrl mp-id :cont ndx :run))
+
+(defn stop [mp-id ndx] (scheduler/set-ctrl mp-id :cont ndx :stop))
 
 (comment
   (up (get-ref-mpd))
