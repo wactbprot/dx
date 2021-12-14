@@ -49,7 +49,7 @@
 ;; runtime tests
 ;; ....................................................................................................
 (defn ctrl-go? [{ctrl :ctrl}]
-  (and (some (partial = ctrl) [:run :mon :cycle])
+  (and (some (partial = ctrl) [:run :cycle])
        (not= ctrl :error)))
 
 (defn launch? [{{i :idx j :jdx} :launch}] (and (int? i) (int j)))
@@ -86,6 +86,17 @@
     (assoc m :ctrl :error)
     m))
 
+(defn ->end
+  "Checks if all states are executed. Sets all states to :ready if so.
+  Sets `:ctrl` interface to `:ready` if it was `:run` if any."
+  [{states :states ctrl :ctrl :as m}]
+  (if (= (count states)
+         (count (filterv (fn [{s :state}] (= s :executed)) states)))
+    (assoc m
+           :states (mapv #(assoc % :state :ready) states)
+           :ctrl (if (= ctrl :run) :ready ctrl))
+    m))
+
 ;; ....................................................................................................
 ;; state
 ;; ....................................................................................................
@@ -102,6 +113,7 @@
     (let [f (update-state-fn idx jdx kw)]
       (-> (assoc m :states (mapv f states))
           ->error
+          ->end
           ->launch))))
 
 (defn set-state 
@@ -130,6 +142,7 @@
   (fn [m]
     (-> (assoc m :ctrl kw)
         ->error
+        ->end
         ->launch)))
 
 (defn set-ctrl

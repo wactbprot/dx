@@ -16,12 +16,14 @@ Third iteration: state is stored in agents, minimal deps.
 
 ## abbreviations
 
-`cont` ... container 
-`defis` ... definitions
-`ndx` ... container number
-`idx` ... sequential step
-`jdx` ... parallel step
-`exch` ... exchange interface
+* `cont` ... container 
+* `defis` ... definitions
+* `ndx` ... container number
+* `idx` ... sequential step
+* `jdx` ... parallel step
+* `exch` ... exchange interface
+
+
 
 ## testing
 
