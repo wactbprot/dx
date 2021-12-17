@@ -36,6 +36,15 @@
                                                 {:idx 1 :state :executed}]})))))))
 
 
+(deftest check-launch-test-ii
+  (testing "find launch and set working"
+    (is (= {:states [{:idx 0 :state :working}
+                     {:idx 1 :state :executed}]
+            :launch {:idx 0 :state :ready}}
+           (->launch {:states [{:idx 0 :state :ready}
+                               {:idx 1 :state :executed}]})))))
+
+
 (deftest check-end-test-i
   (testing "basics"
     (is (= {:ctrl :run

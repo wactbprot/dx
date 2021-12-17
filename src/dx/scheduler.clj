@@ -45,6 +45,12 @@
 
 (defn interface-agent [mp-id struct ndx] (get-in @mem [mp-id struct ndx]))
 
+(defn update-state-fn [{:keys [idx jdx state]}]
+  (fn [{i :idx j :jdx :as m}]
+    (if (and (= idx i) (= jdx j))
+      (assoc m :state state)
+      m)))
+
 ;; ....................................................................................................
 ;; runtime tests
 ;; ....................................................................................................
@@ -52,7 +58,7 @@
   (and (some (partial = ctrl) [:run :cycle])
        (not= ctrl :error)))
 
-(defn launch? [{{i :idx j :jdx} :launch}] (and (int? i) (int j)))
+(defn launch? [{{i :idx j :jdx} :launch}] (and (int? i) (int? j)))
 
 (defn all-pre-exec? [{idx :idx} v]
   (or (zero? idx)
@@ -71,11 +77,16 @@
 ;; interfacs update funs
 ;; ....................................................................................................
 (defn ->launch
-  "Checks for positions to launch next and updates the interface."
+  "Checks for positions to launch next and updates the interface.
+  New in dx: if a `next-ready` is found: the state of it is already
+  set here to `:working`."
   [{states :states :as m}]
   (if-let [next-ready (first (filterv (fn [{s :state}] (= s :ready)) states))]
-    (if (all-pre-exec? next-ready states) 
-      (assoc m :launch next-ready)
+    (if (all-pre-exec? next-ready states)
+      (let [f (update-state-fn (assoc next-ready :state :working))]
+        (assoc m
+               :states (mapv f states)
+               :launch next-ready))
       (dissoc m :launch))
     (dissoc m :launch)))
 
@@ -100,22 +111,16 @@
 ;; ....................................................................................................
 ;; state
 ;; ....................................................................................................
-(defn update-state-fn [idx jdx kw]
-  (fn [{i :idx j :jdx :as m}]
-    (if (and (= idx i) (= jdx j))
-      (assoc m :state kw)
-      m)))
-
 (defn state-fn 
   "Returns a function which should be used as the agents send-function." 
   [idx jdx kw]
   (fn [{states :states :as m}]
-    (let [f (update-state-fn idx jdx kw)]
+    (let [f (update-state-fn {:idx idx :jdx jdx :state kw})]
       (-> (assoc m :states (mapv f states))
           ->error
           ->end
           ->launch))))
-
+ 
 (defn set-state 
   "The `set-state` function should be used by the worker to set new
   states.  This re-evaluats the interface by means
