@@ -1,7 +1,8 @@
 (ns dx.scheduler
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dx scheduler. "}
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [dx.worker :as w]))
 
 
 (defonce mem (atom {}))
@@ -30,12 +31,24 @@
                           v (range)))
                   vv (range))))
 
+(defn ia [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
+
+(defn launch! [m] (prn (:ctrl m)))
+
 (defn up 
   "Builds up the state and ctrl interface. For the mutating parts agents are used."
   [mp-id struct states ctrls]
   (mapv (fn [ndx state ctrl]
-          (swap! mem assoc-in [mp-id struct ndx] (agent {:states (state-vec state)
-                                                         :ctrl   ctrl})))
+          (let [a (agent {:states (state-vec state)
+                          :ctrl   ctrl})]
+            (swap! mem assoc-in [mp-id struct ndx] a)
+            (swap! mem assoc-in [mp-id :loop ndx] (future
+                                                     (loop []
+                                                       (await a)
+                                                       (launch!  @a)
+                                                       (Thread/sleep 1000)
+                                                       (when (not= (:ctrl @a) :down)
+                                                         (recur))))))) 
         (range) states ctrls))
 
 (defn down 
@@ -43,7 +56,7 @@
   [mp-id struct]
   (swap! mem update-in [mp-id] dissoc struct))
 
-(defn interface-agent [mp-id struct ndx] (get-in @mem [mp-id struct ndx]))
+(defn ia [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
@@ -113,58 +126,29 @@
 ;; ....................................................................................................
 (defn state-fn 
   "Returns a function which should be used as the agents send-function." 
-  [idx jdx kw]
+  [{:keys [idx jdx state]}]
   (fn [{states :states :as m}]
-    (let [f (update-state-fn {:idx idx :jdx jdx :state kw})]
+    (let [f (update-state-fn {:idx idx :jdx jdx :state state})]
       (-> (assoc m :states (mapv f states))
           ->error
           ->end
           ->launch))))
- 
-(defn set-state 
-  "The `set-state` function should be used by the worker to set new
-  states.  This re-evaluats the interface by means
-  of [[set-state]]. Afterwards, the function waits for concurrent
-  modifications of other threads by `(await a)` followed by the call
-  to the dispatch function.
-  
-  Example:
-  ```clojure
-  (set-state :mpd-ref :cont 0 0 0 :working)
-  ```"
-  [mp-id struct ndx idx jdx kw]
-  (let [a (interface-agent mp-id struct ndx)]
-    (send a (state-fn idx jdx kw))
-    (await a)
-    (dispatch (deref a))))
+
+(defn state! [{i :idx j :jdx kw :state :as m}] (send (ia m) (state-fn i j kw)))
 
 ;; ....................................................................................................
 ;; ctrl
 ;; ....................................................................................................
 (defn ctrl-fn 
   "Returns a function which should be used as the agents send-function." 
-  [kw]
+  [{kw :ctrl}]
   (fn [m]
     (-> (assoc m :ctrl kw)
         ->error
         ->end
         ->launch)))
 
-(defn set-ctrl
-  "The `set-ctrl` function should be used by the user to trigger actions.
-  This re-evaluats the interface by means of [[set-ctrl]]. Afterwards,
-  the function waits for concurrent modifications of other threads
-  by `(await a)` followed by the call to the dispatch function.
-  
-  Example:
-  ```clojure
-  (set-ctrl :mpd-ref :cont 0 :run)
-  ```"
-  [mp-id struct ndx kw]
-  (let [a (interface-agent mp-id struct ndx)]
-    (send a (ctrl-fn kw))
-    (await a)
-    (dispatch (deref a))))
+(defn ctrl! [m] (send (ia m) (ctrl-fn m)))
 
 (comment
 
