@@ -29,13 +29,13 @@
   (s/ctrl! {:mp-id mp-id
             :struct :cont
             :ndx ndx
-            :ctrl :run}))
+            :ctrl :stop}))
 
-(defn stop [mp-id ndx]
+(defn run [mp-id ndx]
   (s/ctrl! {:mp-id mp-id
             :struct :cont
             :ndx ndx
-            :ctrl :stop}))
+            :ctrl :run}))
 
 (comment
   (up (get-ref-mpd))

@@ -31,30 +31,43 @@
                           v (range)))
                   vv (range))))
 
+(defn struct->future-struct [s] (keyword (str (name s) "-future")))
+
 (defn ia [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
 
-(defn launch! [m] (prn (:ctrl m)))
+(defn il [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id (struct->future-struct struct) ndx]))
+
+(defn launch! [a]
+  
+(prn  (str (:ctrl @a) "." (:ndx @a))))
+
+(defn run [a] (loop []
+                (await a)
+                (launch! a)
+                (Thread/sleep 1000)
+                (when (not (Thread/interrupted)) (recur))))
 
 (defn up 
-  "Builds up the state and ctrl interface. For the mutating parts agents are used."
+  "Builds up the `ndx` `struct`ures interface. For the mutating parts,
+  agents are used. The structures runs in `futures` stored "
   [mp-id struct states ctrls]
   (mapv (fn [ndx state ctrl]
-          (let [a (agent {:states (state-vec state)
+          (let [a (agent {:mp-id  mp-id
+                          :struct struct
+                          :ndx    ndx
+                          :states (state-vec state)
                           :ctrl   ctrl})]
             (swap! mem assoc-in [mp-id struct ndx] a)
-            (swap! mem assoc-in [mp-id :loop ndx] (future
-                                                     (loop []
-                                                       (await a)
-                                                       (launch!  @a)
-                                                       (Thread/sleep 1000)
-                                                       (when (not= (:ctrl @a) :down)
-                                                         (recur))))))) 
+            (swap! mem assoc-in [mp-id (struct->future-struct struct) ndx] (future (run a))))) 
         (range) states ctrls))
 
 (defn down 
-  "Takes down the state and ctrl interface."
+  "Takes down the state and ctrl interface of `struct`ure."
   [mp-id struct]
-  (swap! mem update-in [mp-id] dissoc struct))
+  (let [loop-struct (struct->future-struct struct)]
+    (mapv (fn [[_ f]] (future-cancel f)) (get-in @mem [mp-id loop-struct]))
+    (swap! mem update-in [mp-id] dissoc loop-struct)
+    (swap! mem update-in [mp-id] dissoc struct)))
 
 (defn ia [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
 
