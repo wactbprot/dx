@@ -37,6 +37,16 @@
             :ndx ndx
             :ctrl :run}))
 
+(defn set-cont-state [mp-id ndx idx jdx state]
+  (s/state! {:mp-id mp-id
+             :struct :cont
+             :ndx ndx
+             :idx idx
+             :jdx jdx
+             :state state}))
+
 (comment
   (up (get-ref-mpd))
-  (run :mpd-ref 0))
+  (run :mpd-ref 0)
+  (set-cont-state :mpd-ref 0 0 0 :executed)
+  (down :mpd-ref))

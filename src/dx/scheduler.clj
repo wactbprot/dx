@@ -7,9 +7,9 @@
 
 (defonce mem (atom {}))
 
-;; ....................................................................................................
+;; ................................................................................
 ;; all in, all out
-;; ....................................................................................................
+;; ................................................................................
 (defn flattenv [coll] (into [] (flatten coll))) 
 
 (defn state-vec 
@@ -18,58 +18,24 @@
 
   Example:
   ```clojure
-  (s-vec [[:foo] [:bar :baz]])
+  (state-vec {:mp-id :mpe-ref} [[:foo] [:bar :baz]])
 
   ;; =>
-  ;; [{:idx 0, :jdx 0, :state :foo}
-  ;; {:idx 1, :jdx 0, :state :bar}
-  ;; {:idx 1, :jdx 1, :state :baz}]
+  ;; [{:mp-id :mpe-ref :idx 0 :jdx 0, :state :foo}
+  ;;  {:mp-id :mpe-ref :idx 1 :jdx 0, :state :bar}
+  ;;  {:mp-id :mpe-ref :idx 1 :jdx 1, :state :baz}]
   ```"
-  [vv]
+  [m vv]
   (flattenv (mapv (fn [v i]
-                    (mapv (fn [s j] {:idx i :jdx j :state s})
+                    (mapv (fn [s j] (merge m {:idx i :jdx j :state s}))
                           v (range)))
                   vv (range))))
 
 (defn struct->future-struct [s] (keyword (str (name s) "-future")))
 
-(defn ia [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
+(defn interface-agent [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
 
-(defn il [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id (struct->future-struct struct) ndx]))
-
-(defn launch! [a]
-  
-(prn  (str (:ctrl @a) "." (:ndx @a))))
-
-(defn run [a] (loop []
-                (await a)
-                (launch! a)
-                (Thread/sleep 1000)
-                (when (not (Thread/interrupted)) (recur))))
-
-(defn up 
-  "Builds up the `ndx` `struct`ures interface. For the mutating parts,
-  agents are used. The structures runs in `futures` stored "
-  [mp-id struct states ctrls]
-  (mapv (fn [ndx state ctrl]
-          (let [a (agent {:mp-id  mp-id
-                          :struct struct
-                          :ndx    ndx
-                          :states (state-vec state)
-                          :ctrl   ctrl})]
-            (swap! mem assoc-in [mp-id struct ndx] a)
-            (swap! mem assoc-in [mp-id (struct->future-struct struct) ndx] (future (run a))))) 
-        (range) states ctrls))
-
-(defn down 
-  "Takes down the state and ctrl interface of `struct`ure."
-  [mp-id struct]
-  (let [loop-struct (struct->future-struct struct)]
-    (mapv (fn [[_ f]] (future-cancel f)) (get-in @mem [mp-id loop-struct]))
-    (swap! mem update-in [mp-id] dissoc loop-struct)
-    (swap! mem update-in [mp-id] dissoc struct)))
-
-(defn ia [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id struct ndx]))
+(defn iterface-future [{:keys [mp-id struct ndx]}] (get-in @mem [mp-id (struct->future-struct struct) ndx]))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
@@ -77,9 +43,9 @@
       (assoc m :state state)
       m)))
 
-;; ....................................................................................................
+;; ................................................................................
 ;; runtime tests
-;; ....................................................................................................
+;; ................................................................................
 (defn ctrl-go? [{ctrl :ctrl}]
   (and (some (partial = ctrl) [:run :cycle])
        (not= ctrl :error)))
@@ -92,16 +58,9 @@
                (fn [{i :idx s :state}] (and (< i idx) (not= s :executed)))
                v))))
 
-;; ....................................................................................................
-;; dispatch
-;; ....................................................................................................
-(defn dispatch
-  ([m] (dispatch m prn))
-  ([m f] (when (and (ctrl-go? m) (launch? m)) (f (:launch m)))))
-
-;; ....................................................................................................
+;; ................................................................................
 ;; interfacs update funs
-;; ....................................................................................................
+;; ................................................................................
 (defn ->launch
   "Checks for positions to launch next and updates the interface.
   New in dx: if a `next-ready` is found: the state of it is already
@@ -134,9 +93,9 @@
            :ctrl (if (= ctrl :run) :ready ctrl))
     m))
 
-;; ....................................................................................................
+;; ................................................................................
 ;; state
-;; ....................................................................................................
+;; ................................................................................
 (defn state-fn 
   "Returns a function which should be used as the agents send-function." 
   [{:keys [idx jdx state]}]
@@ -147,11 +106,11 @@
           ->end
           ->launch))))
 
-(defn state! [{i :idx j :jdx kw :state :as m}] (send (ia m) (state-fn i j kw)))
+(defn state! [m] (send (interface-agent m) (state-fn m)))
 
-;; ....................................................................................................
+;; ................................................................................
 ;; ctrl
-;; ....................................................................................................
+;; ................................................................................
 (defn ctrl-fn 
   "Returns a function which should be used as the agents send-function." 
   [{kw :ctrl}]
@@ -161,11 +120,40 @@
         ->end
         ->launch)))
 
-(defn ctrl! [m] (send (ia m) (ctrl-fn m)))
+(defn ctrl! [m] (send (interface-agent m) (ctrl-fn m)))
+
+(defn run [a f]
+  (loop []
+    (await a)
+    (when-let [m (:launch @a)]
+      (send a dissoc :launch)
+      (f m))
+    (when-not  (Thread/interrupted)
+      (Thread/sleep 1000)
+      (recur))))
+
+(defn up 
+  "Builds up the `ndx` `struct`ures interface. For the mutating parts,
+  agents are used. The structures runs in `futures` stored "
+  [mp-id struct states ctrls]
+  (mapv (fn [ndx state ctrl]
+          (let [a (agent {:states (state-vec {:mp-id  mp-id
+                                              :struct struct
+                                              :ndx    ndx} state)
+                          :ctrl   ctrl})]
+            (swap! mem assoc-in [mp-id struct ndx] a)
+            (swap! mem assoc-in [mp-id (struct->future-struct struct) ndx] (future (run a prn)))) 
+        (range) states ctrls))
+
+(defn down 
+  "Takes down the state and ctrl interface of `struct`ure."
+  [mp-id struct]
+  (let [loop-struct (struct->future-struct struct)]
+    (mapv (fn [[_ f]] (future-cancel f)) (get-in @mem [mp-id loop-struct]))
+    (swap! mem update-in [mp-id] dissoc loop-struct)
+    (swap! mem update-in [mp-id] dissoc struct)))
 
 (comment
-
   (get-in @mem [:mpd-ref :cont 0])
-  (send (cont-agent :mpd-ref 0) (fn [m] (assoc-in m [:state 0 0] :working)))
-)
+  (send (cont-agent :mpd-ref 0) (fn [m] (assoc-in m [:state 0 0] :working))))
 
