@@ -7,39 +7,32 @@
 ;; ....................................................................................................
 ;; all in, all out
 ;; ....................................................................................................
-(defn up [mp-id  mpd]  (swap! mem assoc mp-id mpd))
-(defn down [mp-id]  (swap! mem dissoc mp-id))
+(defn up [mem {id :mp-id} mpd] (swap! mem assoc id mpd))
+(defn down [mem {id :mp-id}] (swap! mem dissoc id))
 
 ;; ....................................................................................................
 ;; container (cont)
 ;; ....................................................................................................
-(defn conts       [mp-id] (get-in @mem [mp-id :Container]))
-(defn cont-defs   [mp-id] (mapv :Definition (conts mp-id)))
-(defn cont-titles [mp-id] (mapv :Title (conts mp-id)))
-(defn cont-ctrls  [mp-id] (mapv (comp keyword :Ctrl) (conts mp-id)))
+(defn conts       [mem {id :mp-id}] (get-in @mem [id :Container]))
+(defn cont-defs   [mem {id :mp-id}] (mapv :Definition (conts id)))
+(defn cont-titles [mem {id :mp-id}] (mapv :Title (conts id)))
+(defn cont-ctrls  [mem {id :mp-id}] (mapv (comp keyword :Ctrl) (conts id)))
 
 ;; ....................................................................................................
 ;; definitions (defi)
 ;; ....................................................................................................
-(defn defis     [mp-id] (get-in @mem [mp-id :Definitions]))
-(defn defi-defs [mp-id] (mapv :Definition (defis mp-id)))
+(defn defis     [mem {id :mp-id}] (get-in @mem [id :Definitions]))
+(defn defi-defs [mem {id :mp-id}] (mapv :Definition (defis id)))
 
 ;; ....................................................................................................
 ;; exchange (exch)
 ;; ....................................................................................................
-(defn exch [mp-id] (get-in @mem [mp-id :Exchange]))
+(defn exch [mem {id :mp-id}] (get-in @mem [id :Exchange]))
 
 ;; ....................................................................................................
 ;; states
 ;; ....................................................................................................
 (defn states [v] (mapv (fn [vv] (mapv (fn [vvv] (mapv (constantly :ready) vvv)) vv)) v))
-(defn cont-states [mp-id] (states (cont-defs mp-id)))
-(defn defi-states [mp-id] (states (defi-defs mp-id)))
-
-;; ....................................................................................................
-;; ctrls
-;; ....................................................................................................
-(defn ctrls [v] (mapv (constantly :ready) v))
-(defn cont-ctrls [mp-id] (ctrls (cont-defs mp-id)))
-(defn defi-ctrls [mp-id] (ctrls (defi-defs mp-id)))
+(defn cont-states [mem m] (states (cont-defs mem m)))
+(defn defi-states [mem m] (states (defi-defs mem m)))
 
