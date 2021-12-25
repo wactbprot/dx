@@ -23,7 +23,17 @@ Third iteration: state is stored in agents, minimal deps.
 * `jdx` ... parallel step
 * `exch` ... exchange interface
 
+## mem
 
+## mpd
+
+```clojure
+(-> {}
+      standard->
+      name->
+      descr->
+      exch->)
+```
 
 ## testing
 

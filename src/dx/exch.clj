@@ -1,7 +1,7 @@
 (ns dx.exch)
 
-(defonce mem (atom {}))
+(defn up [mem {id :mp-id} exch] (swap! mem assoc-in  [id :Exchange] (agent exch)))
 
-(defn up [mp-id exch] (swap! mem assoc mp-id (agent exch)))
+(defn down [mem {id :mp-id}] (swap! mem dissoc id :Exchange))
 
-(defn down [mp-id] (swap! mem dissoc mp-id))
+(defn exchange-agent [mem {id :mp-id}] (get-in @mem [id :Exchange]))
