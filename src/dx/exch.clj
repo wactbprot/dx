@@ -1,6 +1,6 @@
 (ns dx.exch)
 
-(defn up [mem {id :mp-id} exch] (swap! mem assoc-in  [id :Exchange] (agent exch)))
+(defn up [mem {id :mp-id} exch] (swap! mem assoc-in [id :Exchange] (agent exch)))
 
 (defn down [mem {id :mp-id}] (swap! mem dissoc id :Exchange))
 

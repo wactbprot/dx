@@ -13,16 +13,17 @@
 ;; ....................................................................................................
 ;; container (cont)
 ;; ....................................................................................................
-(defn conts       [mem {id :mp-id}] (get-in @mem [id :Container]))
-(defn cont-defs   [mem {id :mp-id}] (mapv :Definition (conts id)))
-(defn cont-titles [mem {id :mp-id}] (mapv :Title (conts id)))
-(defn cont-ctrls  [mem {id :mp-id}] (mapv (comp keyword :Ctrl) (conts id)))
+(defn conts [mem {id :mp-id}]
+  (get-in @mem [id :Container]))
+
+(defn cont-defs   [mem m] (mapv :Definition (conts mem m)))
+(defn cont-titles [mem m] (mapv :Title (conts mem m)))
 
 ;; ....................................................................................................
 ;; definitions (defi)
 ;; ....................................................................................................
 (defn defis     [mem {id :mp-id}] (get-in @mem [id :Definitions]))
-(defn defi-defs [mem {id :mp-id}] (mapv :Definition (defis id)))
+(defn defi-defs [mem m] (mapv :Definition (defis mem m)))
 
 ;; ....................................................................................................
 ;; exchange (exch)
@@ -32,7 +33,9 @@
 ;; ....................................................................................................
 ;; states
 ;; ....................................................................................................
-(defn states [v] (mapv (fn [vv] (mapv (fn [vvv] (mapv (constantly :ready) vvv)) vv)) v))
-(defn cont-states [mem m] (states (cont-defs mem m)))
+(defn states [v]
+  (mapv (fn [vv] (mapv (fn [vvv] (mapv (constantly :ready) vvv)) vv)) v))
+
+(defn cont-states [mem m] (prn (cont-defs mem m))(states (cont-defs mem m)))
 (defn defi-states [mem m] (states (defi-defs mem m)))
 

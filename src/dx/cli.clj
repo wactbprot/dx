@@ -3,6 +3,7 @@
       :doc "The dx command line interface. "}
   (:require [dx.exch :as e]
             [dx.model :as m]
+            [dx.mpd :as mpd]
             [dx.task :as t]
             [dx.scheduler :as s]
             [clojure.edn :as edn]
@@ -31,7 +32,7 @@
           globals-map (utils/date-map)]
        (prepair pre-task raw-task from-map globals-map m)))
     (catch Exception e
-      (stmem/set-state-error (assoc m :message (.getMessage e))))))
+      (stmem/set-state-error (assoc m :message (.getMessage e)))))
 
 (t/assemble [m]
  {:Task (dissoc raw-task :Defaults :Use :Replace) 
@@ -39,14 +40,23 @@
    :Use use-m
    :Defaults (:Defaults raw-task)
    :FromExchange from-m
-   :Globals globals-m})
+   :Globals globals-m}))
 
 (defn up [{mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
-    (m/up m-mem m mp)
-    (e/up e-mem m (m/exch m-mem mp-id))
-    (s/up s-mem (assoc m :struct :cont) (m/cont-states m-mem m) prn)
-    (s/up s-mem (assoc m :struct :defi) (m/defi-states m-mem m) prn)))
+    (m/up mem m mp)
+    (e/up mem m (m/exch mem mp-id))
+    (s/up mem (assoc m :struct :cont) (m/cont-states mem m) prn)
+    (s/up mem (assoc m :struct :defi) (m/defi-states mem m) prn)))
+
+(comment
+  ;; generate a fresh mpd
+  (up (-> {}
+          mpd/standard->
+          mpd/name->
+          mpd/descr->
+          mpd/exch->
+          mpd/cont->)))
 
 (defn down [mp-id]
   (let [m {:mp-id mp-id}]

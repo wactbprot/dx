@@ -32,10 +32,10 @@
 (defn struct->future-struct [s] (keyword (str (name s) "-future")))
 
 (defn interface-agent [mem {:keys [mp-id struct ndx]}]
-  (get-in @mem [mp-id :State struct ndx]))
+  (get-in @mem [mp-id struct ndx]))
 
 (defn iterface-future [mem {:keys [mp-id struct ndx]}]
-  (get-in @mem [mp-id :State (struct->future-struct struct) ndx]))
+  (get-in @mem [mp-id (struct->future-struct struct) ndx]))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
@@ -136,21 +136,22 @@
   "Builds up the `ndx` `struct`ures interface. For the mutating parts,
   agents are used. The structures runs in `futures` stored "
   [mem {:keys [mp-id struct]} states f]
+  (prn states)
   (mapv (fn [ndx state]
           (let [a (agent {:states (state-vec {:mp-id  mp-id
                                               :struct struct
                                               :ndx    ndx} state)
                           :ctrl :ready})]
-            (swap! mem assoc-in [mp-id :State struct ndx] a)
-            (swap! mem assoc-in [mp-id :State (struct->future-struct struct) ndx] (future (observe a f)))) 
-        (range) states)))
+            (swap! mem assoc-in [mp-id struct ndx] a)
+            (swap! mem assoc-in [mp-id (struct->future-struct struct) ndx] (future (observe a f))))) 
+        (range) states))
 
 (defn down 
   "Takes down the state and ctrl interface of `struct`ure."
   [mem {:keys [mp-id struct]}]
   (let [f-struct (struct->future-struct struct)]
     (mapv (fn [[_ f]] (future-cancel f)) (get-in @mem [mp-id f-struct]))
-    (swap! mem update-in [mp-id] dissoc :State f-struct)
-    (swap! mem update-in [mp-id] dissoc :State struct)))
+    (swap! mem update-in [mp-id] dissoc  f-struct)
+    (swap! mem update-in [mp-id] dissoc  struct)))
 
 

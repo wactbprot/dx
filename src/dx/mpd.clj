@@ -7,9 +7,10 @@
         :mp-name "generic"
         :task-name "Common-wait"
         :mp-descr "Default desription"
+        :exch {:Default {:Bool true}}
         :cont-title "Default title"
         :cont-descr "Default container description"
-        :cont-elem []})
+        :cont-elem [:Default]})
 
 (defn mpd-id [s n]
   (str "mpd-" (string/lower-case s) "-" (string/replace (string/lower-case n) #"\s" "_")))
@@ -29,7 +30,7 @@
   ([{{s :Standard} :Mp :as m} n]
    (-> m
        (assoc :_id (mpd-id s n)) 
-       (assoc-in  [:Mp :Name] s))))
+       (assoc-in  [:Mp :Name] n))))
 
 (defn descr->
   ([m] (descr-> m (:mp-descr d)))
@@ -37,12 +38,12 @@
    (assoc-in m [:Mp :Description] s)))
 
 (defn exch->
-  ([m] (exch-> m {}))
+  ([m] (exch-> m (:exch d)))
   ([m e]
    (assoc-in m [:Mp :Exchange] e)))
 
 (defn cont->
-  ([m] (cont-> m (:cont-title d) (:cont-descr d) (:comnt-elem d) [[(task)]]))
+  ([m] (cont-> m (:cont-title d) (:cont-descr d) (:cont-elem d) [[(task)]]))
   ([m title] (cont-> m title (:cont-descr d) (:cont-elem d) [[(task)]]))
   ([m title descr] (cont-> m title descr (:cont-elem d) [[(task)]]))
   ([m title descr elem] (cont-> m title descr elem [[(task)]])) 
