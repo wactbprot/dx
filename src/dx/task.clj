@@ -1,5 +1,7 @@
 (ns dx.task
-  (:require [dx.db :as db]))
+  (:require [dx.db :as db]
+            [cheshire.core :as che]
+            [clojure.string :as string]))
 
 (defn apply-to-map-values
   "Applies function `f` to the values of the map `m`."
@@ -45,12 +47,12 @@
   is returned.  If `m` has no key `v` the `v` returned.  This kind of
   replacement is used during the runtime."
   [m task]
-  (let [nm (utils/apply-to-map-keys name m)
+  (let [nm (apply-to-map-keys name m)
         f (fn [v]
             (if-let [r (get nm  v)]
-              (if (map? r) (utils/apply-to-map-keys keyword r) r)
+              (if (map? r) (apply-to-map-keys keyword r) r)
               v))]
-    (utils/apply-to-map-values f task)))
+    (apply-to-map-values f task)))
 
 (defn extract-use-value
   "TODO: write test, refactor to `(k m)`."

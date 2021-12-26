@@ -6,11 +6,14 @@
 (def d {:standard "NN"
         :mp-name "generic"
         :task-name "Common-wait"
-        :mp-descr "Default desription"
+        :mp-descr "Default description"
         :exch {:Default {:Bool true}}
         :cont-title "Default title"
         :cont-descr "Default container description"
-        :cont-elem [:Default]})
+        :cont-elem [:Default]
+        :defi-class "default"
+        :defi-descr "Default description"
+        :defi-cond [{:ExchangePath "Default.Bool", :Methode "eq", :Value true}]})
 
 (defn mpd-id [s n]
   (str "mpd-" (string/lower-case s) "-" (string/replace (string/lower-case n) #"\s" "_")))
@@ -56,10 +59,27 @@
      (assoc-in m v (if-let [conts (get-in m v)]
                      (conj conts cont)
                      [cont])))))
+
+(defn defi->
+  ([m] (defi-> m (:defi-class d) (:defi-descr d) (:defi-cond d) [[(task)]]))
+  ([m defi-class] (defi-> m defi-class (:defi-descr d) (:defi-cond d) [[(task)]]))
+  ([m defi-class descr] (defi-> m defi-class descr (:defi-cond d) [[(task)]]))
+  ([m defi-class descr defi-cond] (defi-> m defi-class descr defi-cond [[(task)]])) 
+  ([m defi-class descr defi-cond defin]
+   (let [defi {:DefinitionClass defi-class
+               :ShortDescr descr
+               :Condition defi-cond
+               :Definition defin}
+         v [:Mp :Definitions]]
+     (assoc-in m v (if-let [defis (get-in m v)]
+                     (conj defis defi)
+                     [defi])))))
+
 (comment
 (-> {}
       standard->
       name->
       descr->
       exch->
-      cont->))
+      cont->
+      defi->))
