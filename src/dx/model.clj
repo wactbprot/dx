@@ -39,9 +39,5 @@
 (defn cont-states [mem m] (states (cont-defs mem m)))
 (defn defi-states [mem m] (states (defi-defs mem m)))
 
-(defn pre-task [mem]
-  (fn [{:keys [mp-id struct ndx idx jdx]}]
-    (let [struct (condp = struct
-                   :cont :Container
-                   :defi :Definitions)]
-      (get-in @mem [mp-id struct ndx idx jdx]))))
+(defn pre-task [mem {:keys [mp-id struct ndx idx jdx]}]
+    (get-in @mem [mp-id struct ndx :Definition idx jdx]))

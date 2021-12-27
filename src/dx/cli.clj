@@ -46,12 +46,18 @@
                :FromExchange from-m
                :Globals globals-m}))
 
+(defn get-task [mem]
+  (fn [{:keys [mp-id struct ndx idx jdx] :as m}]
+    (let [pre-task (m/pre-task mem m)]
+      (prn "rrR")
+      (prn pre-task))))
+
 (defn up [{mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
     (m/up mem m mp)
     (e/up mem m (m/exch mem mp-id))
-    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (m/pre-task mem))
-    (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) (m/pre-task mem))))
+    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (get-task mem))
+    (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) prn)))
 
 (defn down [mp-id]
   (let [m {:mp-id mp-id}]
@@ -62,23 +68,42 @@
 
 (defn stop [mp-id ndx]
   (s/ctrl mem  {:mp-id mp-id
-                :struct :cont
+                :struct :Container
                 :ndx ndx
                 :ctrl :stop}))
 
 (defn run [mp-id ndx]
   (s/ctrl mem {:mp-id mp-id
-               :struct :cont
+               :struct :Container
                :ndx ndx
                :ctrl :run}))
 
 (defn set-cont-state [mp-id ndx idx jdx state]
   (s/state mem {:mp-id mp-id
-                :struct :cont
+                :struct :Container
                 :ndx ndx
                 :idx idx
                 :jdx jdx
                 :state state}))
+
+(defn replace-launch-fn
+  "Enables the replacement of the launch function `f`. `f` is the
+  function which is called to launch new resp. next task.
+
+  Example:
+  ```clojure
+  (replace-future :mpd-nn-generic 0 prn)
+  ;; =>
+  ;; prints
+  ;; {:mp-id :mpd-nn-generic
+  ;; :struct :Container
+  ;;  ...
+  ;; }
+  ```"
+  [mp-id ndx f]
+  (let [m {:mp-id mp-id :ndx ndx}]
+    (s/add-future mem (assoc m :struct :Container) f)
+    (s/add-future mem (assoc m :struct :Definitions) f)))
 
 (comment
   ;; generate a fresh mpd
