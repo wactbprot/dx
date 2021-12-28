@@ -1,20 +1,21 @@
 (ns dx.cli
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dx command line interface. "}
-  (:require [dx.exch :as e]
+  (:require [dx.config :as c]
+            [dx.exch :as e]
             [dx.model :as m]
             [dx.mpd :as mpd]
             [dx.task :as t]
             [dx.scheduler :as s]
             [clojure.edn :as edn]
-            #_[portal.api :as p]
+            [portal.api :as p]
             [clojure.java.io :as io]))
 
-#_(def p (p/open))
-#_(add-tap #'p/submit)
+(def p (p/open))
+(add-tap #'p/submit)
 
-;; entire mem
-(defonce mem (atom {})) 
+;; entire mem initialized with conf
+(defonce mem (atom {:conf c/conf})) 
 
 (defn get-ref-mpd []
   (->  (io/resource "mpd-ref.edn")
@@ -38,8 +39,7 @@
     (catch Exception e
       (stmem/set-state-error (assoc m :message (.getMessage e)))))
 
-  (t/assemble [m]
-              {:Task (dissoc raw-task :Defaults :Use :Replace) 
+  (t/assemble {:Task (dissoc raw-task :Defaults :Use :Replace) 
                :Replace rep-m
                :Use use-m
                :Defaults (:Defaults raw-task)

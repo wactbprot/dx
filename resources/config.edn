@@ -13,7 +13,7 @@
                        :data-stream  "vl-log-stream"
                        :name-mangling false}
                      ]}
- ;; long term memory: couchdb
+ ;; couchdb
  :db-srv "127.0.0.1"
  ;;:db-srv "a73434"
  :db-port 5984
