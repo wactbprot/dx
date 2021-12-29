@@ -18,7 +18,7 @@
 (defn mpd-id [s n]
   (str "mpd-" (string/lower-case s) "-" (string/replace (string/lower-case n) #"\s" "_")))
 
-(defn task
+(defn pre-task
   ([] {:TaskName (:task-name d)})
   ([n] {:TaskName n})
   ([n r] {:TaskName n :Replace r})
@@ -46,10 +46,10 @@
    (assoc-in m [:Mp :Exchange] e)))
 
 (defn cont->
-  ([m] (cont-> m (:cont-title d) (:cont-descr d) (:cont-elem d) [[(task)]]))
-  ([m title] (cont-> m title (:cont-descr d) (:cont-elem d) [[(task)]]))
-  ([m title descr] (cont-> m title descr (:cont-elem d) [[(task)]]))
-  ([m title descr elem] (cont-> m title descr elem [[(task)]])) 
+  ([m] (cont-> m (:cont-title d) (:cont-descr d) (:cont-elem d) [[(pre-task)]]))
+  ([m title] (cont-> m title (:cont-descr d) (:cont-elem d) [[(pre-task)]]))
+  ([m title descr] (cont-> m title descr (:cont-elem d) [[(pre-task)]]))
+  ([m title descr elem] (cont-> m title descr elem [[(pre-task)]])) 
   ([m title descr elem defin]
    (let [cont {:Title title
                :Description descr
@@ -61,10 +61,10 @@
                      [cont])))))
 
 (defn defi->
-  ([m] (defi-> m (:defi-class d) (:defi-descr d) (:defi-cond d) [[(task)]]))
-  ([m defi-class] (defi-> m defi-class (:defi-descr d) (:defi-cond d) [[(task)]]))
+  ([m] (defi-> m (:defi-class d) (:defi-descr d) (:defi-cond d) [[(pre-task)]]))
+  ([m defi-class] (defi-> m defi-class (:defi-descr d) (:defi-cond d) [[(pre-task)]]))
   ([m defi-class descr] (defi-> m defi-class descr (:defi-cond d) [[(task)]]))
-  ([m defi-class descr defi-cond] (defi-> m defi-class descr defi-cond [[(task)]])) 
+  ([m defi-class descr defi-cond] (defi-> m defi-class descr defi-cond [[(pre-task)]])) 
   ([m defi-class descr defi-cond defin]
    (let [defi {:DefinitionClass defi-class
                :ShortDescr descr

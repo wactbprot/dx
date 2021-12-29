@@ -108,7 +108,9 @@
     :Use use-m
     :Replace rep-m))
 
-(defn prepair
-  "Prepairs the task for assemble step."
-  [{rep-m :Replace use-m :Use} raw-task from-m globals-m m]
-  )
+(defn task-conf [task-name {d :db-task-design  v :db-task-view :as conf}]
+  (assoc conf
+        :db-design d 
+        :db-view v
+        :view-key task-name))
+

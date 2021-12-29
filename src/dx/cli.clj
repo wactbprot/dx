@@ -1,7 +1,8 @@
 (ns dx.cli
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dx command line interface. "}
-  (:require [dx.config :as c]
+  (:require [dx.db :as db]
+            [dx.config :as c]
             [dx.exch :as e]
             [dx.model :as m]
             [dx.mpd :as mpd]
@@ -10,12 +11,15 @@
             [clojure.edn :as edn]
             [portal.api :as p]
             [clojure.java.io :as io]))
-
-(def p (p/open))
-(add-tap #'p/submit)
+(comment
+  (def p (p/open))
+  (add-tap #'p/submit))
 
 ;; entire mem initialized with conf
 (defonce mem (atom {:conf c/conf})) 
+
+(comment
+  (swap! mem assoc :conf c/conf))
 
 (defn get-ref-mpd []
   (->  (io/resource "mpd-ref.edn")
@@ -46,17 +50,25 @@
                :FromExchange from-m
                :Globals globals-m}))
 
-(defn get-task [mem]
+(defn get-task [task-name conf]
+  (db/get-view (t/task-conf task-name conf)))
+
+(comment
+  (get-task "Common-wait" (:conf @mem)))
+
+(defn task [mem]
   (fn [{:keys [mp-id struct ndx idx jdx] :as m}]
-    (let [pre-task (m/pre-task mem m)]
-      (prn "rrR")
-      (prn pre-task))))
+    (let [{task-name :TaskName use-map :Use replace-map :Replace} (m/pre-task mem m)]      
+      (if-let [db-task (get-task task-name (:conf @mem))]
+        (prn db-task)
+        (s/state mem (assoc m :state :error))))))
 
 (defn up [{mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
     (m/up mem m mp)
     (e/up mem m (m/exch mem mp-id))
-    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (get-task mem))
+    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (-> mem
+                                                                     task))
     (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) prn)))
 
 (defn down [mp-id]

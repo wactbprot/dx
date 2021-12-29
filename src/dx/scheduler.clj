@@ -1,8 +1,8 @@
 (ns dx.scheduler
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dx scheduler. "}
-  (:require [clojure.string :as string]
-            [dx.worker :as w]))
+  (:require [clojure.string :as string]))
+
 
 
 ;; ................................................................................
@@ -29,14 +29,14 @@
                           v (range)))
                   vv (range))))
 
-(defn observe [a launch-fn]
+(defn observe [{h :heartbeat} a launch-fn]
   (loop []
     (when-not (Thread/interrupted)
       (await a)
-      (when-let [m (:launch @a)]
+      (when-let [l (:launch @a)]
         (send a dissoc :launch)
-        (launch-fn m))
-      (Thread/sleep 1000)
+        (launch-fn l))
+      (Thread/sleep h)
       (recur))))
 
 (defn state-agent [mem {:keys [mp-id struct ndx]}]
@@ -51,13 +51,14 @@
 (defn add-future [mem {:keys [mp-id struct ndx] :as m} f]
   (let [cf (state-future mem m)]
     (when (future? cf) (future-cancel cf))
-    (swap! mem assoc-in [mp-id struct ndx :Future] (future (observe (state-agent mem m) f)))))
+    (swap! mem assoc-in [mp-id struct ndx :Future] (future (observe (:conf @mem) (state-agent mem m) f)))))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
     (if (and (= idx i) (= jdx j))
       (assoc m :state state)
       m)))
+
 
 ;; ................................................................................
 ;; state tests
@@ -124,6 +125,7 @@
 
 (defn state [mem m] (send (state-agent mem m) (state-fn m)))
 
+
 ;; ................................................................................
 ;; ctrl
 ;; ................................................................................
@@ -138,20 +140,26 @@
 
 (defn ctrl [mem m] (send (state-agent mem m) (ctrl-fn m)))
 
+
+
+;; ................................................................................
+;; up
+;; ................................................................................
 (defn up 
   "Builds up the `ndx` `struct`ures interface. For the mutating parts,
   agents are used. The structures runs in `futures` stored "
   [mem {:keys [mp-id struct] :as m} states f]
   (mapv (fn [ndx state]
           (let [m (assoc m :ndx ndx)
-                a (agent {:states (state-vec {:mp-id  mp-id
-                                              :struct struct
-                                              :ndx    ndx} state)
-                          :ctrl :ready})]
+                a (agent {:states (state-vec m state) :ctrl :ready})]
             (add-agent mem m a)
             (add-future mem m f))) 
         (range) states))
 
+
+;; ................................................................................
+;; down
+;; ................................................................................
 (defn down 
   "Takes down the state and ctrl interface of `struct`ure."
   [mem {:keys [mp-id struct]}]
