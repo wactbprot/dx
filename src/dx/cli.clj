@@ -126,6 +126,8 @@
           mpd/exch->
           mpd/cont->
           mpd/defi->))
+  (set-cont-state :mpd-nn-generic 0 0 0 :executed)
+  
   ;; or
   (up (get-ref-mpd))
   (run :mpd-ref 0)

@@ -79,18 +79,21 @@
 ;; interfacs update funs
 ;; ................................................................................
 (defn ->launch
-  "Checks for positions to launch next and updates the interface.
-  New in dx: if a `next-ready` is found: the state of it is already
-  set here to `:working`."
-  [{states :states :as m}]
-  (if-let [next-ready (first (filterv (fn [{s :state}] (= s :ready)) states))]
-    (if (all-pre-exec? next-ready states)
-      (let [f (update-state-fn (assoc next-ready :state :working))]
-        (assoc m
-               :states (mapv f states)
-               :launch next-ready))
+  "If `ctrl` is `:run` or `:cycle: checks for positions to launch next
+  and updates the interface. New in dx: if a `next-ready` is found:
+  the state of it is already set here to `:working`."
+  
+  [{states :states ctrl :ctrl :as m}]
+  (if (or (= ctrl :run) (= ctrl :cycle))
+    (if-let [next-ready (first (filterv (fn [{s :state}] (= s :ready)) states))]
+      (if (all-pre-exec? next-ready states)
+        (let [f (update-state-fn (assoc next-ready :state :working))]
+          (assoc m
+                 :states (mapv f states)
+                 :launch next-ready))
+        (dissoc m :launch))
       (dissoc m :launch))
-    (dissoc m :launch)))
+    m))
 
 (defn ->error
   "Checks for error states. Sets `:ctrl` interface to `:error` if any."

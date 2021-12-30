@@ -6,7 +6,7 @@
 (defn apply-to-map-values
   "Applies function `f` to the values of the map `m`."
   [f m]
-  (into {} (map (fn [[k v]]
+  (into {} (mapv (fn [[k v]]
                   (if (map? v)
                     [k (apply-to-map-values f v)]
                     [k (f v)]))
@@ -15,21 +15,20 @@
 (defn apply-to-map-keys
   "Applies function `f` to the keys of the map `m`."
   [f m]
-  (into {} (map (fn [[k v]]
+  (into {} (mapv (fn [[k v]]
                   (if (map? v)
                     [(f k) (apply-to-map-keys f v)]
                     [(f k) v]))
                 m)))
 
 (defn outer-replace-map
-  "Replaces tokens (given in the m) in the task.
-  This kind of replacement is used during the task build up at the
-  beginning of its life cycle.
+  "Replaces tokens (given in `m`) in `task`.
   
   Example:
   ```clojure
   (outer-replace-map (globals) {:TaskName \"foo\" :Value \"%time\"})
   ;; {:TaskName \"foo\", :Value \"1580652820247\"}
+
   (outer-replace-map nil {:TaskName \"foo\" :Value \"%time\"})
   ;; {:TaskName \"foo\", :Value \"%time\"}
   ```"
@@ -62,10 +61,12 @@
 (defn str->singular-kw
   "Takes a keyword or string and removes the tailing letter (most likely
   a s). Turns the result to a keyword.
-  
+
+  Example:
   ```clojure
   (str->singular-kw :Values)
   ;; :Value
+
   (str->singular-kw \"Values\")
   ;; :Value
   ``` "
@@ -75,7 +76,8 @@
 (defn merge-use-map
   "The use keyword enables a replace mechanism.
   It works like this: proto-task:
-  
+
+  Example:
   ```clojure
   Use: {Values: med_range}
   ;; should lead to:

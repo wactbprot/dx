@@ -63,7 +63,7 @@
 (defn defi->
   ([m] (defi-> m (:defi-class d) (:defi-descr d) (:defi-cond d) [[(pre-task)]]))
   ([m defi-class] (defi-> m defi-class (:defi-descr d) (:defi-cond d) [[(pre-task)]]))
-  ([m defi-class descr] (defi-> m defi-class descr (:defi-cond d) [[(task)]]))
+  ([m defi-class descr] (defi-> m defi-class descr (:defi-cond d) [[(pre-task)]]))
   ([m defi-class descr defi-cond] (defi-> m defi-class descr defi-cond [[(pre-task)]])) 
   ([m defi-class descr defi-cond defin]
    (let [defi {:DefinitionClass defi-class
