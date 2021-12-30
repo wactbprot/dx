@@ -22,4 +22,4 @@
  :db-mpds-view "mpdocs"
  ;; system
  :heartbeat 1000
- }
+ :at-replace "%"}

@@ -51,15 +51,24 @@
                :Globals globals-m}))
 
 (defn get-task [task-name conf]
-  (db/get-view (t/task-conf task-name conf)))
+  (-> task-name
+      (t/task-conf conf)
+      (db/get-view) 
+      first
+      :value))
 
 (comment
   (get-task "Common-wait" (:conf @mem)))
 
 (defn task [mem]
   (fn [{:keys [mp-id struct ndx idx jdx] :as m}]
-    (let [{task-name :TaskName use-map :Use replace-map :Replace} (m/pre-task mem m)]      
-      (if-let [db-task (get-task task-name (:conf @mem))]
+    (let [{task-name     :TaskName
+           use-map       :Use
+           replace-map   :Replace} (m/pre-task mem m)
+          {defaults-map  :Defaults
+           from-exch-map :FromExchange
+           :as db-task} (get-task task-name (:conf @mem))]
+      (if (map? db-task)
         (prn db-task)
         (s/state mem (assoc m :state :error))))))
 
@@ -100,7 +109,7 @@
 
 (defn replace-launch-fn
   "Enables the replacement of the launch function `f`. `f` is the
-  function which is called to launch new resp. next task.
+  function which is called to launch new resp. next tasks.
 
   Example:
   ```clojure
