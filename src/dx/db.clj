@@ -1,6 +1,6 @@
 (ns dx.db
   ^{:author "Thomas Bock <wactbprot@gmail.com>"
-    :doc "Basic database interop. Plain HTTP powerd by http-kit."}
+    :doc "Basic database interop. Plain HTTP powerd by httpkit."}
   (:require [cheshire.core :as che]
             [clojure.string :as string]
             [org.httpkit.client :as http]))
@@ -8,6 +8,9 @@
 ;; ................................................................................
 ;; utils
 ;; ................................................................................
+(defn safe [{r :at-replace} s]
+  (string/replace s #"@([a-zA-Z])" (str r "$1")))
+
 (defn db-base-url [{:keys [db-prot db-srv db-port]}]
   (str db-prot  "://" db-srv ":" db-port))
 
@@ -23,8 +26,8 @@
     (str (db-url conf) "/_design/" db-design "/_view/" db-view
          (when view-key (str "?key=%22" view-key "%22" )))))
 
-(defn result [{body :body}]
-  (try (che/parse-string-strict body true )
+(defn result [conf {body :body}]
+  (try (che/parse-string-strict (safe conf body) true )
        (catch Exception e {:error (.getMessage e)})))
 
 (defn get-rev [{opt :db-opt :as conf} id]
@@ -36,16 +39,16 @@
 ;; crud ops
 ;; ................................................................................
 (defn get-doc [{opt :db-opt :as conf} id]
-  (result @(http/get (doc-url conf id) opt)))
+  (result conf @(http/get (doc-url conf id) opt)))
 
 (defn del-doc [{opt :db-opt :as conf} id]
-  (result @(http/delete (doc-url (assoc conf :rev (get-rev conf id)) id) opt)))
+  (result conf @(http/delete (doc-url (assoc conf :rev (get-rev conf id)) id) opt)))
 
 (defn put-doc [{opt :db-opt :as conf} {id :_id :as doc}]
-  (result @(http/put (doc-url conf id) (assoc opt :body (che/encode doc)))))
+  (result conf @(http/put (doc-url conf id) (assoc opt :body (che/encode doc)))))
 
 ;; ................................................................................
 ;; view
 ;; ................................................................................
 (defn get-view [{opt :db-opt :as conf}]
-  (:rows (result @(http/get (view-url conf) opt))))
+  (:rows (result conf @(http/get (view-url conf) opt))))

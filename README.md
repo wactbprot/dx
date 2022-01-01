@@ -111,5 +111,5 @@ Third iteration: state is stored in agents, minimal deps.
 ## testing
 
 ```shell
-clj -M:test
+clj -M:dev:test
 ```

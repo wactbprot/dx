@@ -1,4 +1,4 @@
-{:deps {org.clojure/clojure {:mvn/version "1.10.3"}}
+{:deps {org.clojure/clojure {:mvn/version "1.11.0-alpha3"}}
  
  :aliases  {:build {:extra-paths ["src" "resources"]
                     :deps {io.github.clojure/tools.build {:git/tag "v0.2.1" :git/sha "dd64636"}}

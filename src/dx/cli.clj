@@ -1,6 +1,6 @@
 (ns dx.cli
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
-    :doc "The dx command line interface. "}
+    :doc "The dx command line interface."}
   (:require [dx.db :as db]
             [dx.config :as c]
             [dx.exch :as e]
