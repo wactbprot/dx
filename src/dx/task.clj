@@ -159,3 +159,15 @@
         :db-view v
         :db-opt (assoc o :query-params {"key" (che/encode task-name)})))
 
+(comment  
+  (def complete-task-view  (:rows (che/decode (slurp "test/dx/tasks.json") true)))
+  
+  (defn vdk [m] (->> m :value :Defaults keys))
+  
+  (def all-default-keys (distinct
+                         (mapv name
+                               (filterv some?
+                                        (flatten (mapv vdk complete-task-view))))))
+  
+  (filterv (fn [s]  (string/starts-with?  s "@")) all-default-keys)
+  (filterv (fn [s] (not (string/starts-with?  s "@"))) all-default-keys))

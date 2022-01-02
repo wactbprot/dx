@@ -9,7 +9,7 @@
 ;; utils
 ;; ................................................................................
 (defn safe [{r :at-replace} s]
-  (string/replace s #"@([a-zA-Z])" (str r "$1")))
+  (string/replace s #"@([a-zA-Z]*)" (str r "$1")))
 
 (defn db-base-url [{:keys [db-prot db-srv db-port]}]
   (str db-prot  "://" db-srv ":" db-port))
@@ -50,5 +50,4 @@
 ;; view
 ;; ................................................................................
 (defn get-view [{opt :db-opt k :view-key :as conf}]
-  (when k (assoc opt  :query-params {"key" (che/encode k)}))
   (:rows (result conf @(http/get (view-url conf) opt))))
