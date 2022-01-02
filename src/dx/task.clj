@@ -153,9 +153,9 @@
     :Use use-m
     :Replace rep-m))
 
-(defn task-conf [task-name {d :db-task-design  v :db-task-view :as conf}]
+(defn task-conf [task-name {d :db-task-design  v :db-task-view o :db-opt :as conf}]
   (assoc conf
         :db-design d 
         :db-view v
-        :view-key task-name))
+        :db-opt (assoc o :query-params {"key" (che/encode task-name)})))
 

@@ -21,10 +21,9 @@
   (when (and (db-url conf) id)
     (str db-url "/" id (when rev (str "?rev=" rev)))))
 
-(defn view-url [{:keys [db-design view db-view view-key] :as conf}]
+(defn view-url [{:keys [db-design view db-view] :as conf}]
   (when (and db-design db-view)
-    (str (db-url conf) "/_design/" db-design "/_view/" db-view
-         (when view-key (str "?key=%22" view-key "%22" )))))
+    (str (db-url conf) "/_design/" db-design "/_view/" db-view)))
 
 (defn result [conf {body :body}]
   (try (che/parse-string-strict (safe conf body) true )
@@ -50,5 +49,6 @@
 ;; ................................................................................
 ;; view
 ;; ................................................................................
-(defn get-view [{opt :db-opt :as conf}]
+(defn get-view [{opt :db-opt k :view-key :as conf}]
+  (when k (assoc opt  :query-params {"key" (che/encode k)}))
   (:rows (result conf @(http/get (view-url conf) opt))))
