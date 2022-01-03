@@ -22,7 +22,7 @@
   ([] (str (tm-c/to-long (get-date-object))))
   ([d] (str (tm-c/to-long d))))
 
-(defn date-map
+(defn globals
   "Returns a map with date/time replacements.
 
   Example

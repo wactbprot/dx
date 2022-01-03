@@ -87,8 +87,8 @@
     :Definition
     [;; First: start a wait task with 1000 ms waittime.
      ;; At the same time start a wait task with 2000 ms waittime.
-     [{:TaskName "Common-wait", :Replace {:%waittime 1000}}
-      {:TaskName "Common-wait", :Replace {:%waittime 2000}}]
+     [{:TaskName "Common-wait", :Replace {:%waittime 2000}}
+      {:TaskName "Common-wait", :Replace {:%waittime 1000}}]
      ;; After first step is executed: start 4 wait tasks 
      ;; with 100 ms waittime, step is executed within 1000ms
      [{:TaskName "Common-wait", :Replace {:%waittime 1000}}

@@ -60,14 +60,21 @@
 
 (defn task [mem]
   (fn [{:keys [mp-id struct ndx idx jdx] :as m}]
-    (let [{task-name     :TaskName
+    (let [conf           (:conf @mem)
+          {task-name     :TaskName
            use-map       :Use
            replace-map   :Replace} (m/pre-task mem m)
           {defaults-map  :Defaults
            from-exch-map :FromExchange
-           :as db-task} (get-task task-name (:conf @mem))]
+           :as db-task} (get-task task-name conf)]
       (if (map? db-task)
-        (prn db-task)
+        (prn 
+         (t/assemble {:Task (dissoc db-task :Defaults :Use :Replace) 
+                     :Replace replace-map
+                     :Use use-map
+                     :Defaults defaults-map
+                     :FromExchange (e/from mem m from-exch-map)
+                     :Globals (t/globals conf)}))
         (s/state mem (assoc m :state :error))))))
 
 (defn up [{mp-id :_id mp :Mp}]

@@ -29,16 +29,6 @@
                           v (range)))
                   vv (range))))
 
-(defn observe [{h :heartbeat} a launch-fn]
-  (loop []
-    (when-not (Thread/interrupted)
-      (await a)
-      (when-let [l (:launch @a)]
-        (send a dissoc :launch)
-        (launch-fn l))
-      (Thread/sleep h)
-      (recur))))
-
 (defn state-agent [mem {:keys [mp-id struct ndx]}]
   (get-in @mem [mp-id struct ndx :State]))
 
@@ -85,6 +75,7 @@
   
   [{states :states ctrl :ctrl :as m}]
   (if (or (= ctrl :run) (= ctrl :cycle))
+
     (if-let [next-ready (first (filterv (fn [{s :state}] (= s :ready)) states))]
       (if (all-pre-exec? next-ready states)
         (let [f (update-state-fn (assoc next-ready :state :working))]
@@ -143,6 +134,17 @@
 
 (defn ctrl [mem m] (send (state-agent mem m) (ctrl-fn m)))
 
+
+(defn observe [{h :heartbeat} a launch-fn]
+  (loop []
+    (when-not (Thread/interrupted)
+      (await a)
+      (when-let [l (:launch @a)]
+        (send a dissoc :launch)
+        (launch-fn l)
+        (send a (ctrl-fn @a)))
+      (Thread/sleep h)
+      (recur))))
 
 
 ;; ................................................................................

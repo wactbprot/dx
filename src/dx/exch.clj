@@ -77,10 +77,11 @@
   ;; {:%check {:Type \"ref\" :Unit \"Pa\" :Value 100.0}}
   ```"
   [mem m from-map]
-  (into {}
-        (mapv (fn [[k v]]
-                {k (rd mem (assoc m :exch v))})
-              from-map)))
+  (when (map? from-map)
+    (into {}
+          (mapv (fn [[k v]]
+                  {k (rd mem (assoc m :exch v))})
+                from-map))))
 
 (comment
   (def complete-task-view  (:rows (che/decode (slurp "test/dx/tasks.json") true)))
