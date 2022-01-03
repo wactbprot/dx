@@ -29,11 +29,9 @@
 (comment
   (defn get-task
     "Trys to gather all information belonging to `m`. Calls `prepair` and
-  `assemble` function.`
+  `assemble` function.`"
   
-  TODO: The Tasks should be provided by the ltmem. Storing the Tasks
-  at the stmem was not the bet idea." 
-    [e-mem pre-task]
+    [pre-task]
     (try
       (let [pre-task    (stmem/get-val (assoc m :func :defin))
             raw-task    (ltmem/get-task (:TaskName pre-task))
@@ -75,7 +73,7 @@
 (defn up [{mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
     (m/up mem m mp)
-    (e/up mem m (m/exch mem mp-id))
+    (e/up mem m (m/exch mem m))
     (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (-> mem
                                                                      task))
     (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) prn)))
@@ -108,8 +106,9 @@
                 :state state}))
 
 (defn replace-launch-fn
-  "Enables the replacement of the launch function `f`. `f` is the
-  function which is called to launch new resp. next tasks.
+  "Enables the replacement of the periodically invoked launch function
+  `f`. `f` is the function which is called to launch new resp. next
+  tasks.
 
   Example:
   ```clojure
@@ -135,6 +134,7 @@
           mpd/exch->
           mpd/cont->
           mpd/defi->))
+  
   (set-cont-state :mpd-nn-generic 0 0 0 :executed)
   
   ;; or
