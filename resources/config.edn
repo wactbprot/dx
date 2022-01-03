@@ -1,0 +1,25 @@
+{:app-name "dx"
+ :mulog {:type :multi
+         :publishers[
+                     ;; send events to the stdout
+                     ;; {:type :console
+                     ;; :pretty? true}
+                     ;; send events to ELS
+                      {:type :elasticsearch
+                       :url "http://a75438:9200/"
+                       :els-version  :v7.x
+                       :publish-delay 1000
+                       :data-stream  "vl-log-stream"
+                       :name-mangling false}]}
+ ;; couchdb
+ :db-srv "127.0.0.1"
+ :db-port 5984
+ :db-name "vl_db_work"
+ :db-prot "http"
+ :db-task-design "dbmp"
+ :db-task-view "tasks"
+ :db-mpds-design "dbmp"
+ :db-mpds-view "mpdocs"
+ ;; system
+ :heartbeat 1000
+ :at-replace "%"}

@@ -26,22 +26,27 @@
 (deftest check-launch-test-i
   (testing "basics"
     (is (= 0
-           (:idx (:launch (->launch {:states [{:idx 0 :state :ready}
+           (:idx (:launch (->launch {:ctrl :run
+                                     :states [{:idx 0 :state :ready}
                                                   {:idx 1 :state :executed}]})))))
     (is (= 1
-           (:idx (:launch (->launch {:states [{:idx 0 :state :executed}
+           (:idx (:launch (->launch {:ctrl :run
+                                     :states [{:idx 0 :state :executed}
                                                   {:idx 1 :state :ready}]})))))
     (is (nil?
-         (:idx (:launch (->launch {:states [{:idx 0 :state :executed}
+         (:idx (:launch (->launch {:ctrl :run
+                                   :states [{:idx 0 :state :executed}
                                                 {:idx 1 :state :executed}]})))))))
 
 
 (deftest check-launch-test-ii
   (testing "find launch and set working"
-    (is (= {:states [{:idx 0 :state :working}
+    (is (= {:ctrl :run
+            :states [{:idx 0 :state :working}
                      {:idx 1 :state :executed}]
             :launch {:idx 0 :state :ready}}
-           (->launch {:states [{:idx 0 :state :ready}
+           (->launch {:ctrl :run
+                      :states [{:idx 0 :state :ready}
                                {:idx 1 :state :executed}]})))))
 
 
