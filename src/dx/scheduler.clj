@@ -32,16 +32,8 @@
 (defn state-agent [mem {:keys [mp-id struct ndx]}]
   (get-in @mem [mp-id struct ndx :State]))
 
-(defn add-agent [mem {:keys [mp-id struct ndx]} a]
-  (swap! mem assoc-in [mp-id struct ndx :State] a))
-
 (defn state-future [mem {:keys [mp-id struct ndx]}]
   (get-in @mem [mp-id  struct ndx :Future]))
-
-(defn add-future [mem {:keys [mp-id struct ndx] :as m} f]
-  (let [cf (state-future mem m)]
-    (when (future? cf) (future-cancel cf))
-    (swap! mem assoc-in [mp-id struct ndx :Future] (future (observe (:conf @mem) (state-agent mem m) f)))))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
@@ -134,22 +126,40 @@
 
 (defn ctrl [mem m] (send (state-agent mem m) (ctrl-fn m)))
 
-
-(defn observe [{h :heartbeat} a launch-fn]
+;; ................................................................................
+;; observer f
+;; ................................................................................
+(defn observe
+  "Observe function loops when thread is not interupted. Invokes the
+  `launch-fn` when there is a task associated to `:launch`. If so,
+  `:launch` is removed followed by the invocation of `->launch` in
+  order to start tasks in parallel. The latter means: it takes at
+  least `:heartbeat`msec for the next task is launched."
+  [{h :heartbeat} a launch-fn]
   (loop []
     (when-not (Thread/interrupted)
       (await a)
       (when-let [l (:launch @a)]
-        (send a dissoc :launch)
         (launch-fn l)
-        (send a (ctrl-fn @a)))
+        (send a (fn [m]
+                  (dissoc m :launch)   
+                  (->launch m))))
       (Thread/sleep h)
       (recur))))
+
 
 
 ;; ................................................................................
 ;; up
 ;; ................................................................................
+(defn add-agent [mem {:keys [mp-id struct ndx]} a]
+  (swap! mem assoc-in [mp-id struct ndx :State] a))
+
+(defn add-future [mem {:keys [mp-id struct ndx] :as m} f]
+  (let [cf (state-future mem m)]
+    (when (future? cf) (future-cancel cf))
+    (swap! mem assoc-in [mp-id struct ndx :Future] (future (observe (:conf @mem) (state-agent mem m) f)))))
+
 (defn up 
   "Builds up the `ndx` `struct`ures interface. For the mutating parts,
   agents are used. The structures runs in `futures` stored "
