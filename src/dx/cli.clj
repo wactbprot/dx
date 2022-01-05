@@ -26,28 +26,6 @@
        slurp
        edn/read-string))
 
-(comment
-  (defn get-task
-    "Trys to gather all information belonging to `m`. Calls `prepair` and
-  `assemble` function.`"
-  
-    [pre-task]
-    (try
-      (let [pre-task    (stmem/get-val (assoc m :func :defin))
-            raw-task    (ltmem/get-task (:TaskName pre-task))
-            from-map    (exch/from (exch/all m) (:FromExchange raw-task))
-            globals-map (utils/date-map)]
-        (prepair pre-task raw-task from-map globals-map m)))
-    (catch Exception e
-      (stmem/set-state-error (assoc m :message (.getMessage e)))))
-
-  (t/assemble {:Task (dissoc raw-task :Defaults :Use :Replace) 
-               :Replace rep-m
-               :Use use-m
-               :Defaults (:Defaults raw-task)
-               :FromExchange from-m
-               :Globals globals-m}))
-
 (defn get-task [task-name conf]
   (-> task-name
       (t/task-conf conf)
@@ -56,34 +34,44 @@
       :value))
 
 (comment
+  (up (get-ref-mpd))
+  (m/pre-task mem {:mp-id :mpd-ref
+                   :struct :Container
+                   :ndx 0
+                   :idx 0
+                   :jdx 0})
+  
   (get-task "Common-wait" (:conf @mem)))
 
-(defn task [mem]
-  (fn [{:keys [mp-id struct ndx idx jdx] :as m}]
-    (let [conf           (:conf @mem)
-          {task-name     :TaskName
-           use-map       :Use
-           replace-map   :Replace} (m/pre-task mem m)
-          {defaults-map  :Defaults
-           from-exch-map :FromExchange
-           :as db-task} (get-task task-name conf)]
-      (if (map? db-task)
-        (prn 
-         (t/assemble {:Task (dissoc db-task :Defaults :Use :Replace) 
-                     :Replace replace-map
-                     :Use use-map
-                     :Defaults defaults-map
-                     :FromExchange (e/from mem m from-exch-map)
-                     :Globals (t/globals conf)}))
-        (s/state mem (assoc m :state :error))))))
+(defn build-task [mem m]
+  (let [conf           (:conf @mem)
+        {task-name     :TaskName
+         use-map       :Use
+         replace-map   :Replace} (m/pre-task mem m)
+        {defaults-map  :Defaults
+         from-exch-map :FromExchange
+         :as db-task} (get-task task-name conf)]
+    (if (map? db-task)
+      (t/assemble {:Task (dissoc db-task :Defaults :Use :Replace) 
+                   :Replace replace-map
+                   :Use use-map
+                   :Defaults defaults-map
+                   :FromExchange (e/from mem m from-exch-map)
+                   :Globals (t/globals conf)})
+      (s/state mem (assoc m :state :error)))))
+
+
+
+(defn exec-fn [mem]
+  (fn [m]
+    (build-task mem m)))
 
 (defn up [{mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
     (m/up mem m mp)
     (e/up mem m (m/exch mem m))
-    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (-> mem
-                                                                     task))
-    (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) prn)))
+    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (exec mem))
+    (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) (exec mem))))
 
 (defn down [mp-id]
   (let [m {:mp-id mp-id}]

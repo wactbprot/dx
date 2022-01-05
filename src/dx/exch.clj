@@ -1,6 +1,8 @@
 (ns dx.exch
   (:require [clojure.string :as string]))
 
+
+
 (defn up [mem {id :mp-id} exch]
   (swap! mem assoc-in [id :Exchange] (agent exch)))
 
@@ -8,15 +10,14 @@
 
 (defn exch-agent [mem {id :mp-id}] (get-in @mem [id :Exchange]))
 
+
 ;; ................................................................................
 ;; utils
 ;; ................................................................................
-
 (defn path->kw
   [s f]
   {:pre [(string? s)]}
   (-> (string/split s #"\.") f keyword))
-
 
 (defn path->first-kw
   "Returns the first part of `path` as keyword or nil.
@@ -41,6 +42,7 @@
   [s]
   (path->kw s second))
 
+
 ;; ................................................................................
 ;; read, from
 ;; ................................................................................
@@ -50,7 +52,7 @@
 
   Example
   ``clojure
-  (read mem {:mp-id :mpd-ref :exch \"A.Unit\"})
+  (rd mem {:mp-id :mpd-ref :exch \"A.Unit\"})
   ;; \"Pa\"
   ```"
   [mem {mp-id :mp-id path :exch :as m}]
@@ -63,7 +65,6 @@
         (if-let [x (get-in @a [first-kw second-kw])]
           x
           (get-in @a [first-kw]))))))
-        
 
 (defn from
   "Replaces the values of the given `from-map` by means of
@@ -82,6 +83,49 @@
           (mapv (fn [[k v]]
                   {k (rd mem (assoc m :exch v))})
                 from-map))))
+
+;; ................................................................................
+;; runtime checks (StartIf, StopIf, ...)
+;; ................................................................................
+(defn ok?
+  "Checks if a certain exchange endpoint  evaluates to true.
+
+  Example:
+  ```clojure
+  (ok? mem {:mp-id :mpd-ref :exch \"C.IsOk\"})
+  ```"
+  [mem m]
+  (contains? #{"ok" :ok "true" true "yo!"} (rd mem m)))
+
+(comment
+  ;; from cmp
+  (defn exists? [mp-id k] (some? (read! mp-id k)))
+
+  (defn stop-if
+    "Checks if the exchange path given with `:MpName` and `:StopIf`
+  evaluates to true."
+    [{mp-id :MpName k :StopIf}]
+    (if k
+      (ok? mp-id k)
+      true))
+
+  (defn run-if
+    "Checks if the exchange path given with `:MpName` and `:RunIf`
+  evaluates to true."
+    [{mp-id :MpName k :RunIf}]
+    (if k
+      (ok? mp-id k)
+      true))
+
+  (defn only-if-not
+    "Runs the task `only-if-not` the exchange path given with `:MpName`
+  and `:OnlyIfNot` evaluates to true."
+    [{mp-id :MpName k :OnlyIfNot}]
+    (cond
+      (nil? k)                true
+      (not (exists? mp-id k)) false
+      (not (ok? mp-id k))     true)))
+
 
 (comment
   (def complete-task-view  (:rows (che/decode (slurp "test/dx/tasks.json") true)))

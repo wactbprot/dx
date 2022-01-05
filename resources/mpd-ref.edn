@@ -14,7 +14,8 @@
              :A {:Type "ref" :Unit "Pa", :Value 100.0 }
              ;; .. or flat values are valid
              :B "token"
-             ;; 
+             ;;
+             :C {:IsOk "yo!"}
              :Target_pressure {:Selected 1
                                :Select [
                                         {
