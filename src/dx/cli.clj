@@ -26,6 +26,12 @@
        slurp
        edn/read-string))
 
+;; ................................................................................
+;; exec workflow
+;; ................................................................................
+;;; todo: how to end exec thread (e.g. if (map? db-task) gives false
+;;; --> return value of s/state!?
+;;;
 (defn get-task [task-name conf]
   (-> task-name
       (t/task-conf conf)
@@ -52,19 +58,28 @@
          from-exch-map :FromExchange
          :as db-task} (get-task task-name conf)]
     (if (map? db-task)
-      (t/assemble {:Task (dissoc db-task :Defaults :Use :Replace) 
-                   :Replace replace-map
-                   :Use use-map
-                   :Defaults defaults-map
-                   :FromExchange (e/from mem m from-exch-map)
-                   :Globals (t/globals conf)})
+      (merge
+       (t/assemble {:Task (dissoc db-task :Defaults :Use :Replace) 
+                    :Replace replace-map
+                    :Use use-map
+                    :Defaults defaults-map
+                          :FromExchange (e/from mem m from-exch-map)
+                    :Globals (t/globals conf)})
+       m)
       (s/state mem (assoc m :state :error)))))
 
-
+(defn check-task [mem task]
+  (if (e/run-if mem task)
+    (if (e/only-if-not mem task)
+      (prn task)
+      (s/state mem (assoc task :state :executed)))
+    (s/state mem (assoc task :state :ready))))
 
 (defn exec-fn [mem]
   (fn [m]
-    (build-task mem m)))
+    (->> m
+         (build-task mem)
+         (check-task mem))))
 
 (defn up [{mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]

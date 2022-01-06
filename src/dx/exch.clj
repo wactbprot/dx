@@ -87,18 +87,19 @@
 ;; ................................................................................
 ;; runtime checks (StartIf, StopIf, ...)
 ;; ................................................................................
+(defn exists? [mem m] (some? (rd mem m)))
+
 (defn ok?
   "Checks if a certain exchange endpoint  evaluates to true.
-  
+  Here, 'evaluates to true' means: the value at point is contained in
+  the ok-set.
+
   Example:
   ```clojure
   (ok? mem {:mp-id :mpd-ref :exch \"C.IsOk\"})
   ```"
   [mem m]
   (contains? #{"ok" :ok "true" true "yo!"} (rd mem m)))
-
-
-(defn exists? [mem m] (some? (rd mem m)))
 
 (defn stop-if
   "Checks if the exchange path given with `:MpName` and `:StopIf`
@@ -124,6 +125,7 @@
     (nil? k)                              true
     (not (exists? mem (assoc m :exch k))) false
     (not (ok? mem (assoc m :exch k)))     true))
+
 
 
 (comment
