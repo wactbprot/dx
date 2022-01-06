@@ -89,7 +89,7 @@
 ;; ................................................................................
 (defn ok?
   "Checks if a certain exchange endpoint  evaluates to true.
-
+  
   Example:
   ```clojure
   (ok? mem {:mp-id :mpd-ref :exch \"C.IsOk\"})
@@ -97,34 +97,33 @@
   [mem m]
   (contains? #{"ok" :ok "true" true "yo!"} (rd mem m)))
 
-(comment
-  ;; from cmp
-  (defn exists? [mp-id k] (some? (read! mp-id k)))
 
-  (defn stop-if
-    "Checks if the exchange path given with `:MpName` and `:StopIf`
+(defn exists? [mem m] (some? (rd mem m)))
+
+(defn stop-if
+  "Checks if the exchange path given with `:MpName` and `:StopIf`
   evaluates to true."
-    [{mp-id :MpName k :StopIf}]
-    (if k
-      (ok? mp-id k)
-      true))
+  [mem {mp-id :MpName k :StopIf :as m}]
+  (if k
+    (ok? mem (assoc m :exch k))
+    true))
 
-  (defn run-if
-    "Checks if the exchange path given with `:MpName` and `:RunIf`
+(defn run-if
+  "Checks if the exchange path given with `:MpName` and `:RunIf`
   evaluates to true."
-    [{mp-id :MpName k :RunIf}]
-    (if k
-      (ok? mp-id k)
-      true))
+  [mem {mp-id :MpName k :RunIf :as m}]
+  (if k
+    (ok? mem (assoc m :exch k))
+    true))
 
-  (defn only-if-not
-    "Runs the task `only-if-not` the exchange path given with `:MpName`
+(defn only-if-not
+  "Runs the task `only-if-not` the exchange path given with `:MpName`
   and `:OnlyIfNot` evaluates to true."
-    [{mp-id :MpName k :OnlyIfNot}]
-    (cond
-      (nil? k)                true
-      (not (exists? mp-id k)) false
-      (not (ok? mp-id k))     true)))
+  [mem {mp-id :MpName k :OnlyIfNot :as m}]
+  (cond
+    (nil? k)                              true
+    (not (exists? mem (assoc m :exch k))) false
+    (not (ok? mem (assoc m :exch k)))     true))
 
 
 (comment
