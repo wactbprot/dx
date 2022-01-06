@@ -57,7 +57,6 @@
   ```"
   [mem {mp-id :mp-id path :exch :as m}]
   (let [a (exch-agent mem m)]
-    (await a)
     (if-let [x (get @a (keyword path))]
       x
       (let [first-kw (path->first-kw path)
