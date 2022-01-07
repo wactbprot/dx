@@ -67,22 +67,4 @@
     (e/down mem m)
     (m/down mem m)))
 
-(defn replace-launch-fn
-  "Enables the replacement of the periodically invoked launch function
-  `f`. `f` is the function which is called to launch new resp. next
-  tasks.
-
-  Example:
-  ```clojure
-  (replace-future :mpd-nn-generic 0 prn)
-  ;; =>
-  ;; prints
-  ;; {:mp-id :mpd-nn-generic
-  ;; :struct :Container
-  ;;  ...
-  ;; }
-  ```"
-  [mp-id ndx f]
-  (let [m {:mp-id mp-id :ndx ndx}]
-    (s/add-future mem (assoc m :struct :Container) f)
-    (s/add-future mem (assoc m :struct :Definitions) f)))
+(defn replace-launch-fns [mem m f] (s/add-future mem m f))
