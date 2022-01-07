@@ -1,7 +1,7 @@
 (ns dx.cli
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dx command line interface."}
-  (:require [dx.dx :as dx]
+  (:require [dx.core :as dx]
             [dx.db :as db]
             [dx.config :as c]
             [dx.scheduler :as s]
