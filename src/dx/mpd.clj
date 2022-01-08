@@ -35,6 +35,11 @@
        (assoc :_id (mpd-id s n)) 
        (assoc-in  [:Mp :Name] n))))
 
+(defn base []
+  (-> {}
+      standard->
+      name->))
+
 (defn descr->
   ([m] (descr-> m (:mp-descr d)))
   ([m s]
@@ -76,9 +81,7 @@
                      [defi])))))
 
 (comment
-(-> {}
-      standard->
-      name->
+  (-> (base)
       descr->
       exch->
       cont->

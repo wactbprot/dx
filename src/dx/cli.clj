@@ -3,6 +3,7 @@
     :doc "The dx command line interface."}
   (:require [dx.core :as dx]
             [dx.db :as db]
+            [dx.mpd :as mpd]
             [dx.config :as c]
             [dx.scheduler :as s]
             [clojure.edn :as edn]
@@ -76,13 +77,13 @@
 
 (comment
   ;; generate a fresh mpd
-  (up mem (-> {}
-              mpd/standard->
-              mpd/name->
-              mpd/descr->
-              mpd/exch->
-              mpd/cont->
-              mpd/defi->))
+  (up  (-> {}
+           mpd/standard->
+           mpd/name->
+           mpd/descr->
+           mpd/exch->
+           mpd/cont->
+           mpd/defi->))
   
   (set-cont-state :mpd-nn-generic 0 0 0 :executed)
   
