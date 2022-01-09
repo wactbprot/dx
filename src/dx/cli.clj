@@ -77,9 +77,7 @@
 
 (comment
   ;; generate a fresh mpd
-  (up  (-> {}
-           mpd/standard->
-           mpd/name->
+  (up  (-> (mpd/base)
            mpd/descr->
            mpd/exch->
            mpd/cont->
