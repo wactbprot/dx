@@ -6,6 +6,7 @@
             [dx.exch :as e]
             [dx.model :as m]
             [dx.task :as t]
+            [dx.worker :as w]
             [dx.scheduler :as s]))
 
 ;; ................................................................................
@@ -43,15 +44,19 @@
 (defn check-task [mem task]
   (if (e/run-if mem task)
     (if (e/only-if-not mem task)
-      (prn task)
-      (s/state mem (assoc task :state :executed)))
-    (s/state mem (assoc task :state :ready))))
+      task
+      (assoc task :state :executed))
+    (assoc task :state :ready)))
 
-(defn exec-fn [mem]
+(defn exec-fn 
+  "Returns a function that closes over `mem`. The Function is called
+  when the scheduler finds a new task to start."
+  [mem]
   (fn [m]
-    (->> m
-         (build-task mem)
-         (check-task mem))))
+  (s/state mem (->> m
+                    (build-task mem)
+                    (check-task mem)
+                    (w/dispatch mem)))))
 
 (defn up [mem {mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
@@ -67,4 +72,6 @@
     (e/down mem m)
     (m/down mem m)))
 
-(defn replace-launch-fns [mem m f] (s/add-future mem m f))
+  (defn replace-launch-fns [mem m f] (s/add-future mem m f))
+  
+
