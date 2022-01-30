@@ -1,2 +1,0 @@
-Randbedingungen {#section-architecture-constraints}
-===============

@@ -1,2 +1,0 @@
-Entwurfsentscheidungen {#section-design-decisions}
-======================
