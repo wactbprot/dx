@@ -5,12 +5,12 @@
                      ;; {:type :console
                      ;; :pretty? true}
                      ;; send events to ELS
-                      {:type :elasticsearch
-                       :url "http://a75438:9200/"
-                       :els-version  :v7.x
-                       :publish-delay 1000
-                       :data-stream  "vl-log-stream"
-                       :name-mangling false}]}
+                     {:type :elasticsearch
+                      :url "http://a75438:9200/"
+                      :els-version  :v7.x
+                      :publish-delay 1000
+                      :data-stream  "vl-log-stream"
+                      :name-mangling false}]}
  ;; couchdb
  :db-srv "127.0.0.1"
  :db-port 5984

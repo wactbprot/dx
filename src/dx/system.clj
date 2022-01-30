@@ -1,4 +1,4 @@
-(ns dx.cli
+(ns dx.system
   ^{:author "Wact.B.Prot <wactbprot@gmail.com>"
     :doc "The dx command line interface."}
   (:require [dx.core :as dx]
@@ -6,6 +6,7 @@
             [dx.mpd :as mpd]
             [dx.config :as c]
             [dx.scheduler :as s]
+            [integrant.core :as ig]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [portal.api :as p]))
@@ -14,7 +15,13 @@
   (def p (p/open))
   (add-tap #'p/submit))
 
+(comment
+  (def config
+    (ig/read-string (slurp "config.edn"))))
+
 ;; entire mem initialized with conf
+;; mem should become a simple map
+;; and id/init ed
 (defonce mem (atom {:conf c/conf})) 
 
 (defn get-ref-mpd []
