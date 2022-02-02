@@ -19,6 +19,18 @@
   (def config
     (ig/read-string (slurp "config.edn"))))
 
+(ig/init {::mem {}
+          ::log {:mulog {:type :multi
+                         :publishers[{:type :console :pretty? true}
+                                     {:type :elasticsearch
+                                      :url "http://a75438:9200/"
+                                      :els-version  :v7.x
+                                      :publish-delay 1000
+                                      :data-stream  "vl-log-stream"
+                                      :name-mangling false}]}}})
+
+(defmethod ig/init-key ::mem [_ mem] mem)
+          
 ;; entire mem initialized with conf
 ;; mem should become a simple map
 ;; and id/init ed
