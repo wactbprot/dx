@@ -163,7 +163,12 @@
 
 (defn up 
   "Builds up the `ndx` `struct`ures interface. For the mutating parts,
-  agents are used. The structures runs in `futures` stored "
+  agents are used. The structures runs in `futures` stored.
+
+  Example:
+  ```clojure
+  ;; states looks like this:
+  ```"
   [mem {:keys [mp-id struct] :as m} states f]
   ;; (reduce mem ...)
   (mapv (fn [ndx state]

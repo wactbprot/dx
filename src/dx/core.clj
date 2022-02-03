@@ -60,6 +60,7 @@
 
 (defn up [mem {mp-id :_id mp :Mp}]
   (let [m {:mp-id (keyword mp-id)}]
+
     (m/up mem m mp)
     (e/up mem m (m/exch mem m))
     (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (exec-fn mem))
