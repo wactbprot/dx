@@ -18,8 +18,8 @@
 (comment
   (def config
     (ig/read-string (slurp "config.edn"))))
-
-(ig/init {::mem {}
+(comment
+  (ig/init {::mem {}
           ::log {:mulog {:type :multi
                          :publishers[{:type :console :pretty? true}
                                      {:type :elasticsearch
@@ -27,7 +27,7 @@
                                       :els-version  :v7.x
                                       :publish-delay 1000
                                       :data-stream  "vl-log-stream"
-                                      :name-mangling false}]}}})
+                                      :name-mangling false}]}}}))
 
 (defmethod ig/init-key ::mem [_ mem] mem)
           
