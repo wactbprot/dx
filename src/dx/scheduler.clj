@@ -169,9 +169,8 @@
   Example:
   ```clojure
   ;; states looks like this:
-  [[[:ready :ready] [:ready :ready :ready :ready] [:ready]]
-  [[:ready :ready]]
-  [[:ready]]]
+  [[[:ready :ready :ready :ready]]
+   [[:ready :ready]]]
   
   ;; m carries the position:
   {:mp-id :mpd-ref :struct :Container}
