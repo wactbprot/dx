@@ -132,10 +132,10 @@
 ;; ................................................................................
 (defn observe
   "Observe function loops when thread is not interupted. Invokes the
-  `launch-fn` when there is a task associated to `:launch`. If so,
-  `:launch` is removed followed by the invocation of `->launch` in
-  order to start tasks in parallel. The latter means: it takes at
-  least `:heartbeat`msec for the next task is launched."
+  `launch-fn` when `:launch` is not `nil`. If so, `:launch` is removed
+  followed by the invocation of `->launch` in order to start tasks in
+  parallel. The latter means: it takes at least `:heartbeat`msec for
+  the next task is launched."
   [{h :heartbeat} a launch-fn]
   (loop []
     (when-not (Thread/interrupted)
@@ -156,27 +156,35 @@
 (defn add-agent [mem {:keys [mp-id struct ndx]} a]
   (assoc-in mem [mp-id struct ndx :State] a))
 
-(defn add-future [mem {:keys [mp-id struct ndx] :as m} f]
+(defn add-observer [mem {:keys [mp-id struct ndx] :as m} f]
   (let [cf (state-future mem m)]
     (when (future? cf) (future-cancel cf))
-    (assoc-in mem [mp-id struct ndx :Future] (future (observe (:conf mem) (state-agent mem m) f)))))
+    (assoc-in mem [mp-id struct ndx :Observer] (future (observe (:conf mem) (state-agent mem m) f)))))
 
 (defn up 
-  "Builds up the `ndx` `struct`ures interface. For the mutating parts,
-  agents are used. The structures runs in `futures` stored.
+  "Builds up the `ndx` `struct`ures interface. For the mutating parts (the states),
+  agents are used (see [[add-agent]]. The agents are observed by
+  the [[observe]] function. The observer executes the launch function
+  `f` on the next state to start. All is assoced to `mem` 
 
   Example:
   ```clojure
   ;; states looks like this:
+  [[[:ready :ready] [:ready :ready :ready :ready] [:ready]]
+  [[:ready :ready]]
+  [[:ready]]]
+  
+  ;; m carries the position:
+  {:mp-id :mpd-ref :struct :Container}
   ```"
-  [mem {:keys [mp-id struct] :as m} states f]
-  ;; (reduce mem ...)
-  (mapv (fn [ndx state]
-          (let [m (assoc m :ndx ndx)
-                a (agent {:states (state-vec m state) :ctrl :ready})]
-            (add-agent mem m a)
-            (add-future mem m f))) 
-        (range) states))
+  [mem m states f]
+  (reduce-kv (fn [res ndx state]
+               (let [m (assoc m :ndx ndx)
+                     a (agent {:states (state-vec m state) :ctrl :ready})]
+                 (-> res
+                     (add-agent m a)
+                     (add-observer m f))))
+             mem states))
 
 
 ;; ................................................................................
@@ -185,7 +193,7 @@
 (defn down 
   "Takes down the state and ctrl interface of `struct`ure."
   [mem {:keys [mp-id struct]}]
-  (mapv (fn [{f :Future}] (future-cancel f)) (get-in mem [mp-id struct]))
+  (mapv (fn [{f :Observer}] (future-cancel f)) (get-in mem [mp-id struct]))
   (update-in mem [mp-id] dissoc struct))
 
 
