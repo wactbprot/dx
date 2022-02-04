@@ -29,11 +29,11 @@
                           v (range)))
                   vv (range))))
 
-(defn state-agent [mem {:keys [mp-id struct ndx]}]
+(defn get-agent [mem {:keys [mp-id struct ndx]}]
   (get-in mem [mp-id struct ndx :State]))
 
-(defn state-future [mem {:keys [mp-id struct ndx]}]
-  (get-in mem [mp-id  struct ndx :Future]))
+(defn add-agent [mem {:keys [mp-id struct ndx]} a]
+  (assoc-in mem [mp-id struct ndx :State] a))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
@@ -109,7 +109,7 @@
           ->end
           ->launch))))
 
-(defn state [mem m] (send (state-agent mem m) (state-fn m)))
+(defn state [mem m] (send (get-agent mem m) (state-fn m)))
 
 
 ;; ................................................................................
@@ -124,7 +124,7 @@
         ->end
         ->launch)))
 
-(defn ctrl [mem m] (send (state-agent mem m) (ctrl-fn m)))
+(defn ctrl [mem m] (send (get-agent mem m) (ctrl-fn m)))
 
 
 ;; ................................................................................
@@ -136,7 +136,7 @@
   followed by the invocation of `->launch` in order to start tasks in
   parallel. The latter means: it takes at least `:heartbeat`msec for
   the next task is launched."
-  [{h :heartbeat} a launch-fn]
+  [{h :heartbeat :or {h 1000 }} a launch-fn]
   (loop []
     (when-not (Thread/interrupted)
       (await a)
@@ -153,13 +153,12 @@
 ;; ................................................................................
 ;; up
 ;; ................................................................................
-(defn add-agent [mem {:keys [mp-id struct ndx]} a]
-  (assoc-in mem [mp-id struct ndx :State] a))
 
-(defn add-observer [mem {:keys [mp-id struct ndx] :as m} f]
-  (let [cf (state-future mem m)]
-    (when (future? cf) (future-cancel cf))
-    (assoc-in mem [mp-id struct ndx :Observer] (future (observe (:conf mem) (state-agent mem m) f)))))
+(defn ->observer [mem {:keys [mp-id struct ndx] :as m} f]
+  (let [p [mp-id struct ndx :Observer]
+        o (get-in mem p)]
+    (when (future? o) (future-cancel o))
+    (assoc-in mem p (future (observe (:conf mem) (get-agent mem m) f)))))
 
 (defn up 
   "Builds up the `ndx` `struct`ures interface. For the mutating parts (the states),
@@ -183,7 +182,7 @@
                      a (agent {:states (state-vec m state) :ctrl :ready})]
                  (-> res
                      (add-agent m a)
-                     (add-observer m f))))
+                     (->observer m f))))
              mem states))
 
 
