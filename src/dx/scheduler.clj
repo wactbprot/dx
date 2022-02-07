@@ -119,14 +119,15 @@
 ;; ................................................................................
 (defn ctrl-fn 
   "Returns a function which should be used as the agents send-function." 
-  [{kw :ctrl}]
+  [{kw :ctrl} launch!]
   (fn [m]
     (-> (assoc m :ctrl kw)
         ->error
         ->end
-        ->launch)))
+        ->launch
+        launch!)))
 
-(defn ctrl [mem m] (send (get-agent mem m) (ctrl-fn m)))
+(defn ctrl [mem m launch!] (send (get-agent mem m) (ctrl-fn m launch!)))
 
 
 
