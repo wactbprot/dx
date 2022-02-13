@@ -58,21 +58,20 @@
                     (check-task mem)
                     (w/dispatch mem)))))
 
-(defn up [mem {mp-id :_id mp :Mp}]
-  (let [m {:mp-id (keyword mp-id)}]
+(defn up [mem mpd]
 
-    (m/up mem m mp)
-    (e/up mem m (m/exch mem m))
-    (s/up mem (assoc m :struct :Container) (m/cont-states mem m) (exec-fn mem))
-    (s/up mem (assoc m :struct :Definitions) (m/defi-states mem m) (exec-fn mem))))
+    (-> mem
+        (m/up m mp)
+
+        (s/up (assoc m :struct :Container) (m/cont-states mem m) (exec-fn mem))
+        (s/up (assoc m :struct :Definitions) (m/defi-states mem m) (exec-fn mem)))))
 
 (defn down [mem mp-id]
   (let [m {:mp-id mp-id}]
-    (s/down mem (assoc m :struct :Container))
-    (s/down mem (assoc m :struct :Definitions))
-    (e/down mem m)
-    (m/down mem m)))
+    (-> mem
+        (s/down (assoc m :struct :Container))
+        (s/down (assoc m :struct :Definitions))
+        (e/down m)
+        (m/down m))))
 
-  (defn replace-launch-fns [mem m f] (s/add-future mem m f))
-  
 

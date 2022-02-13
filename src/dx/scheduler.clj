@@ -8,26 +8,15 @@
 ;; ................................................................................
 ;; all in, all out
 ;; ................................................................................
-(defn flattenv [coll] (into [] (flatten coll))) 
 
-(defn state-vec 
-  "Turns the state vector `s` (a vector of vectors with keywords in
-  it) into a vector of maps which can be analysed more easy.
+;; ................................................................................
+;; agent(s)
+;; ................................................................................
+(defn get-agents [mem {:keys [mp-id struct]}]
+  (get-in mem [mp-id struct]))
 
-  Example:
-  ```clojure
-  (state-vec {:mp-id :mpe-ref} [[:foo] [:bar :baz]])
-
-  ;; =>
-  ;; [{:mp-id :mpe-ref :idx 0 :jdx 0, :state :foo}
-  ;;  {:mp-id :mpe-ref :idx 1 :jdx 0, :state :bar}
-  ;;  {:mp-id :mpe-ref :idx 1 :jdx 1, :state :baz}]
-  ```"
-  [m vv]
-  (flattenv (mapv (fn [v i]
-                    (mapv (fn [s j] (merge m {:idx i :jdx j :state s}))
-                          v (range)))
-                  vv (range))))
+(defn get-agent [mem {:keys [ndx] :as m}]
+  (get (get-agents mem m) ndx))
 
 (defn update-state-fn [{:keys [idx jdx state]}]
   (fn [{i :idx j :jdx :as m}]
@@ -85,17 +74,6 @@
            :ctrl (if (= ctrl :run) :ready ctrl))
     m))
 
-;; ................................................................................
-;; agent(s)
-;; ................................................................................
-(defn get-agents [mem {:keys [mp-id struct]}]
-  (get-in mem [mp-id struct]))
-
-(defn get-agent [mem {:keys [ndx] :as m}]
-  (get (get-agents mem m) ndx))
-
-(defn add-agent [mem {:keys [mp-id struct ndx]} a]
-  (assoc-in mem [mp-id struct ndx] a))
 
 ;; ................................................................................
 ;; state
@@ -127,66 +105,4 @@
         ->launch)))
 
 (defn ctrl [mem m] (send (get-agent mem m) (ctrl-fn m)))
-
-
-
-;; ................................................................................
-;; up
-;; ................................................................................
-(defn state-up 
-  "Builds up the `ndx` `struct`ure state interface for the mutating parts.
-  Agents are used (see [[add-agent]]. 
-
-  Example:
-  ```clojure
-  ;; states looks like this:
-  (def s [[[:ready :ready]]
-   [[:ready]]])
-  
-  ;; m carries the position:
-  (def m {:mp-id :a :struct :b})
-
-  ;; call up returns:
-  (state-up m s)
-  {:a
-  {:b
-  {0 #<Agent@149953c4: 
-     {:states
-      [{:mp-id :a, :struct :b, :ndx 0, :idx 0, :jdx 0, :state :ready}
-       {:mp-id :a,
-        :struct :b,
-        :ndx 0,
-        :idx 0,
-        :jdx 1,
-        :state :ready}],
-      :ctrl :ready}>,
-   1 #<Agent@3c3eb708: 
-     {:states
-      [{:mp-id :a,
-        :struct :b,
-        :ndx 1,
-        :idx 0,
-        :jdx 0,
-        :state :ready}],
-      :ctrl :ready}>}}}
-  ```"
-  [m states]
-  (reduce-kv (fn [res ndx state]
-               (let [m (assoc m :ndx ndx)
-                     a (agent {:states (state-vec m state)
-                               :ctrl :ready})]
-                 (add-agent res m a)))
-             {} states))
-
-;; ................................................................................
-;; down
-;; ................................................................................
-(defn down 
-  "Takes down the state and ctrl interface of `struct`ure.
-  TODO: rewrite
-  "
-  [mem {:keys [mp-id struct]}]
-  (mapv (fn [{f :Observer}] (future-cancel f)) (get-in mem [mp-id struct]))
-  (update-in mem [mp-id] dissoc struct))
-
 

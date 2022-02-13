@@ -1,16 +1,6 @@
 (ns dx.exch
   (:require [clojure.string :as string]))
 
-
-
-(defn up [mem {id :mp-id} exch]
-  (assoc-in mem [id :Exchange] (agent exch)))
-
-(defn down [mem {id :mp-id}] (dissoc mem id :Exchange))
-
-(defn exch-agent [mem {id :mp-id}] (get-in mem [id :Exchange]))
-
-
 ;; ................................................................................
 ;; utils
 ;; ................................................................................
