@@ -4,6 +4,7 @@
   (:require [dx.core :as dx]
             [dx.db :as db]
             [dx.mpd :as mpd]
+            [dx.model :as model]
             [dx.config :as c]
             [dx.scheduler :as s]
             [integrant.core :as ig]
@@ -30,4 +31,4 @@
        edn/read-string))
 
 (comment
-  (def mem (dx/up {} (get-ref-mpd)))
+  (def mem (model/up {} (get-ref-mpd))))

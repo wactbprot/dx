@@ -22,11 +22,11 @@
       first
       :value))
 
-(defn build-task [mem m]
+(defn build-task [mem loc]
   (let [conf           (:conf @mem)
         {task-name     :TaskName
          use-map       :Use
-         replace-map   :Replace} (m/pre-task mem m)
+         replace-map   :Replace} (m/pre-task mem loc)
         {defaults-map  :Defaults
          from-exch-map :FromExchange
          :as db-task} (get-task task-name conf)]
@@ -36,10 +36,10 @@
                     :Replace replace-map
                     :Use use-map
                     :Defaults defaults-map
-                          :FromExchange (e/from mem m from-exch-map)
+                    :FromExchange (e/from mem loc from-exch-map)
                     :Globals (t/globals conf)})
-       m)
-      (s/state mem (assoc m :state :error)))))
+       loc)
+      (s/state mem (assoc loc :state :error)))))
 
 (defn check-task [mem task]
   (if (e/run-if mem task)
@@ -52,19 +52,12 @@
   "Returns a function that closes over `mem`. The Function is called
   when the scheduler finds a new task to start."
   [mem]
-  (fn [m]
-  (s/state mem (->> m
+  (fn [loc]
+  (s/state mem (->> loc
                     (build-task mem)
                     (check-task mem)
                     (w/dispatch mem)))))
 
-(defn up [mem mpd]
-
-    (-> mem
-        (m/up m mp)
-
-        (s/up (assoc m :struct :Container) (m/cont-states mem m) (exec-fn mem))
-        (s/up (assoc m :struct :Definitions) (m/defi-states mem m) (exec-fn mem)))))
 
 (defn down [mem mp-id]
   (let [m {:mp-id mp-id}]
